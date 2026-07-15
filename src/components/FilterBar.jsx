@@ -23,10 +23,6 @@ function ToggleGroup({ options, value, onChange }) {
 export default function FilterBar({
   unit,
   onUnitChange,
-  dataset,
-  onDatasetChange,
-  flux,
-  onFluxChange,
   siteFilter,
   onSiteFilterChange,
   tourneeFilter,
@@ -47,33 +43,6 @@ export default function FilterBar({
           ]}
           value={unit}
           onChange={onUnitChange}
-        />
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-slate-500">Données</span>
-        <InfoTip text="Référence = ce qui était prévu. Réel = ce qui a été (ou sera) réellement constaté, avec un léger écart par rapport à la prévision." />
-        <ToggleGroup
-          options={[
-            { value: 'ref', label: 'Référence' },
-            { value: 'reel', label: 'Réel' },
-          ]}
-          value={dataset}
-          onChange={onDatasetChange}
-        />
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-slate-500">Flux</span>
-        <InfoTip text="PIC = courrier, presse, recommandé, imprimés publicitaires. PFC = colis." />
-        <ToggleGroup
-          options={[
-            { value: 'tous', label: 'Tous' },
-            { value: 'PIC', label: 'PIC' },
-            { value: 'PFC', label: 'PFC' },
-          ]}
-          value={flux}
-          onChange={onFluxChange}
         />
       </div>
 

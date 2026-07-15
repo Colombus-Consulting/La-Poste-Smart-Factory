@@ -3,14 +3,14 @@ import { ArrowRight, Shuffle } from 'lucide-react';
 import { computeEor } from '../data/mockData';
 import InfoTip from './InfoTip';
 
-function aggregateSite(site, coefficients, dataset) {
+function aggregateSite(site, coefficients) {
   let excedent = 0;
   let deficit = 0;
   let sousCount = 0;
   let surCount = 0;
 
   for (const t of site.tournees) {
-    const eor = computeEor(t.objects[dataset], coefficients);
+    const eor = computeEor(t.objects.reel, coefficients);
     const ratio = eor / t.capacite;
     if (ratio < 0.85) {
       excedent += t.capacite - eor;
@@ -50,8 +50,8 @@ function buildSuggestions(aggregates) {
   return suggestions;
 }
 
-export default function ConsolidationPanel({ sites, coefficients, dataset }) {
-  const aggregates = useMemo(() => sites.map((s) => aggregateSite(s, coefficients, dataset)), [sites, coefficients, dataset]);
+export default function ConsolidationPanel({ sites, coefficients }) {
+  const aggregates = useMemo(() => sites.map((s) => aggregateSite(s, coefficients)), [sites, coefficients]);
   const suggestions = useMemo(() => buildSuggestions(aggregates), [aggregates]);
 
   const totalExcedent = aggregates.reduce((s, a) => s + a.excedent, 0);

@@ -14,11 +14,11 @@ import {
   generateMockData,
   HORIZONS,
   defaultCoefficients,
-  computeEorByFlux,
+  computeEor,
   CAPACITE_REF,
 } from './data/mockData';
 
-function computeKpis(sites, coefficients, dataset, flux) {
+function computeKpis(sites, coefficients) {
   let chargeTotale = 0;
   let capaciteTotale = 0;
   let nbSurcharge = 0;
@@ -27,7 +27,7 @@ function computeKpis(sites, coefficients, dataset, flux) {
 
   for (const site of sites) {
     for (const t of site.tournees) {
-      const eor = computeEorByFlux(t.objects[dataset], coefficients, flux);
+      const eor = computeEor(t.objects.reel, coefficients);
       chargeTotale += eor;
       capaciteTotale += t.capacite;
       const ratio = eor / t.capacite;
@@ -52,8 +52,6 @@ export default function App() {
   const [view, setView] = useState('global');
   const [horizon, setHorizon] = useState('J');
   const [unit, setUnit] = useState('eor');
-  const [dataset, setDataset] = useState('reel');
-  const [flux, setFlux] = useState('tous');
   const [siteFilter, setSiteFilter] = useState('');
   const [tourneeFilter, setTourneeFilter] = useState('');
   const [selectedTourneeId, setSelectedTourneeId] = useState('');
@@ -70,10 +68,7 @@ export default function App() {
     return sites;
   }, [allSites, siteFilter, tourneeFilter]);
 
-  const kpis = useMemo(
-    () => computeKpis(filteredSites, coefficients, dataset, flux),
-    [filteredSites, coefficients, dataset, flux]
-  );
+  const kpis = useMemo(() => computeKpis(filteredSites, coefficients), [filteredSites, coefficients]);
 
   const selectedTournee = useMemo(() => {
     if (!selectedTourneeId) return null;
@@ -99,10 +94,6 @@ export default function App() {
           <FilterBar
             unit={unit}
             onUnitChange={setUnit}
-            dataset={dataset}
-            onDatasetChange={setDataset}
-            flux={flux}
-            onFluxChange={setFlux}
             siteFilter={siteFilter}
             onSiteFilterChange={setSiteFilter}
             tourneeFilter={tourneeFilter}
@@ -119,18 +110,16 @@ export default function App() {
                   <SitesTable
                     sites={filteredSites}
                     coefficients={coefficients}
-                    dataset={dataset}
                     unit={unit}
-                    flux={flux}
                     onSelectTournee={setSelectedTourneeId}
                   />
                 </div>
                 <div className="space-y-4">
-                  <ConsolidationPanel sites={allSites} coefficients={coefficients} dataset={dataset} />
+                  <ConsolidationPanel sites={allSites} coefficients={coefficients} />
                 </div>
               </div>
               <div className="px-6 pb-6">
-                <DistributionPanel sites={filteredSites} coefficients={coefficients} dataset={dataset} unit={unit} />
+                <DistributionPanel sites={filteredSites} coefficients={coefficients} unit={unit} />
               </div>
             </>
           )}
@@ -141,9 +130,7 @@ export default function App() {
               <SitesTable
                 sites={filteredSites}
                 coefficients={coefficients}
-                dataset={dataset}
                 unit={unit}
-                flux={flux}
                 onSelectTournee={setSelectedTourneeId}
               />
             </div>
@@ -154,9 +141,7 @@ export default function App() {
               <TourneeListView
                 sites={filteredSites}
                 coefficients={coefficients}
-                dataset={dataset}
                 unit={unit}
-                flux={flux}
                 onSelectTournee={setSelectedTourneeId}
               />
             </div>
@@ -164,7 +149,7 @@ export default function App() {
 
           {view === 'consolidation' && (
             <div className="mx-auto max-w-3xl p-6">
-              <ConsolidationPanel sites={allSites} coefficients={coefficients} dataset={dataset} />
+              <ConsolidationPanel sites={allSites} coefficients={coefficients} />
             </div>
           )}
 

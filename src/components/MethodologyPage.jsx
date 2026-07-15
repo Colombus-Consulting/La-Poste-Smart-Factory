@@ -16,9 +16,9 @@ const SECTIONS = [
   },
   {
     icon: ShieldCheck,
-    title: 'Référence vs Réel, et fiabilité',
+    title: 'Fiabilité des données',
     body:
-      "La Référence est la charge prévue, le Réel est la charge constatée (ou estimée pour les jours à venir). Plus l'horizon est proche du jour J, plus la prévision est fiable : 100% à J, ~90% à J+1, 60 à 85% à J+2.",
+      "Les chiffres affichés sont des données réelles, mais le flux d'objets n'est pas remonté à 100% plusieurs jours à l'avance. La fiabilité augmente à mesure que l'on se rapproche du jour de distribution : 100% à J, ~90% à J+1, ~70% à J+2.",
   },
   {
     icon: Palette,

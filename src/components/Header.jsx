@@ -23,8 +23,8 @@ export default function Header({ horizonInfo, date }) {
       <div className="flex items-center gap-4">
         <div className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${badgeClass}`}>
           <Icon size={14} />
-          Fiabilité prévision {horizonInfo.reliability}%
-          <InfoTip text="La fiabilité indique à quel point la prévision de charge est proche de la réalité. Elle augmente à mesure que l'on se rapproche du jour de distribution." />
+          Fiabilité des données {horizonInfo.reliability}%
+          <InfoTip text="Il s'agit de données réelles, mais le flux n'est pas encore remonté à 100% à J+1 et J+2. La fiabilité augmente à mesure que l'on se rapproche du jour de distribution, jusqu'à 100% le jour même." />
         </div>
         <div className="text-right text-sm text-slate-500">
           {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}

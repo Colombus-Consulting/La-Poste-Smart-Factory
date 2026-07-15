@@ -20,7 +20,6 @@ export default function EorMatrixPage({ coefficients, onChange, onReset }) {
           <thead>
             <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
               <th className="py-2 font-medium">Type d'objet</th>
-              <th className="py-2 font-medium">Flux</th>
               <th className="py-2 font-medium text-right">Coefficient EOR</th>
             </tr>
           </thead>
@@ -28,13 +27,10 @@ export default function EorMatrixPage({ coefficients, onChange, onReset }) {
             {OBJECT_TYPES.map((type) => (
               <tr key={type.key} className="border-t border-slate-100">
                 <td className="py-3 font-medium text-slate-700">{type.label}</td>
-                <td className="py-3">
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{type.flux}</span>
-                </td>
                 <td className="py-3 text-right">
                   <input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
                     value={coefficients[type.key]}
                     onChange={(e) => onChange(type.key, Math.max(0, Number(e.target.value)))}

@@ -1,26 +1,23 @@
 import React, { useMemo } from 'react';
-import { computeEorByFlux } from '../data/mockData';
+import { computeEor } from '../data/mockData';
 import { StatusPastille, UtilizationBar } from './StatusBadge';
 import InfoTip from './InfoTip';
 
-export default function TourneeListView({ sites, coefficients, dataset, unit, flux, onSelectTournee }) {
+export default function TourneeListView({ sites, coefficients, unit, onSelectTournee }) {
   const rows = useMemo(() => {
     const all = [];
     for (const site of sites) {
       for (const t of site.tournees) {
-        const objects = t.objects[dataset];
-        const chargeEor = computeEorByFlux(objects, coefficients, flux);
-        const chargeObjets = Object.entries(objects).reduce((sum, [key, count]) => {
-          const included = flux === 'tous' || (key === 'colis') === (flux === 'PFC');
-          return included ? sum + count : sum;
-        }, 0);
+        const objects = t.objects.reel;
+        const chargeEor = computeEor(objects, coefficients);
+        const chargeObjets = Object.values(objects).reduce((sum, count) => sum + count, 0);
         const ratio = chargeEor / t.capacite;
         const status = ratio > 1 ? 'surcharge' : ratio < 0.85 ? 'sous-charge' : 'optimal';
         all.push({ t, siteName: site.name, chargeEor, chargeObjets, ratio, status });
       }
     }
     return all.sort((a, b) => b.ratio - a.ratio);
-  }, [sites, coefficients, dataset, flux]);
+  }, [sites, coefficients]);
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm">

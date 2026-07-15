@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { computeEorByFlux, CAPACITE_REF } from '../data/mockData';
+import { computeEor, CAPACITE_REF } from '../data/mockData';
 import { StatusPastille, UtilizationBar } from './StatusBadge';
 import InfoTip from './InfoTip';
 
-function tourneeMetrics(tournee, coefficients, dataset, flux) {
-  const objects = tournee.objects[dataset];
-  const chargeEor = computeEorByFlux(objects, coefficients, flux);
-  const chargeObjets = Object.entries(objects).reduce((sum, [key, count]) => {
-    const included = flux === 'tous' || (key === 'colis') === (flux === 'PFC');
-    return included ? sum + count : sum;
-  }, 0);
+function tourneeMetrics(tournee, coefficients) {
+  const objects = tournee.objects.reel;
+  const chargeEor = computeEor(objects, coefficients);
+  const chargeObjets = Object.values(objects).reduce((sum, count) => sum + count, 0);
   const ratio = chargeEor / tournee.capacite;
   const status = ratio > 1 ? 'surcharge' : ratio < 0.85 ? 'sous-charge' : 'optimal';
   return { chargeEor, chargeObjets, ratio, status };
 }
 
-export default function SitesTable({ sites, coefficients, dataset, unit, flux, onSelectTournee }) {
+export default function SitesTable({ sites, coefficients, unit, onSelectTournee }) {
   const [collapsed, setCollapsed] = useState({});
 
   return (
@@ -27,7 +24,7 @@ export default function SitesTable({ sites, coefficients, dataset, unit, flux, o
       </div>
       <div className="max-h-[420px] overflow-y-auto">
         {sites.map((site) => {
-          const metrics = site.tournees.map((t) => ({ t, m: tourneeMetrics(t, coefficients, dataset, flux) }));
+          const metrics = site.tournees.map((t) => ({ t, m: tourneeMetrics(t, coefficients) }));
           const totalCharge = metrics.reduce((s, x) => s + x.m.chargeEor, 0);
           const totalCapacite = site.tournees.reduce((s, t) => s + t.capacite, 0);
           const ratioSite = totalCapacite ? totalCharge / totalCapacite : 0;

@@ -5,11 +5,11 @@ export const ETABLISSEMENT = 'PPDC Bretagne-Sud';
 export const CAPACITE_REF = 800; // EOR par tournée
 
 export const OBJECT_TYPES = [
-  { key: 'courrier', label: 'Courrier / lettre', flux: 'PIC', coeffDefault: 1, weight: 0.42 },
-  { key: 'imprime', label: 'Imprimé publicitaire', flux: 'PIC', coeffDefault: 0.5, weight: 0.16 },
-  { key: 'presse', label: 'Presse / journal', flux: 'PIC', coeffDefault: 1.5, weight: 0.1 },
-  { key: 'recommande', label: 'Recommandé (signature)', flux: 'PIC', coeffDefault: 3, weight: 0.07 },
-  { key: 'colis', label: 'Colis', flux: 'PFC', coeffDefault: 5, weight: 0.25 },
+  { key: 'ipDistribRep', label: 'IP distrib. rép.', coeffDefault: 0.56, weight: 0.16 },
+  { key: 'courrier', label: 'Courrier', coeffDefault: 1, weight: 0.42 },
+  { key: 'ppi', label: 'PPI', coeffDefault: 2.21, weight: 0.1 },
+  { key: 's3', label: '3S', coeffDefault: 2.87, weight: 0.07 },
+  { key: 'colis', label: 'Colis', coeffDefault: 5, weight: 0.25 },
 ];
 
 export const HORIZONS = [
@@ -72,7 +72,7 @@ function randRange(rng, min, max) {
 }
 
 // Moins de courrier en fin de semaine (surtout le samedi) ; le poids libéré
-// est redistribué sur la presse et les colis.
+// est redistribué sur le PPI et les colis.
 function weightsForDay(dayOfWeek) {
   const weights = OBJECT_TYPES.reduce((acc, t) => {
     acc[t.key] = t.weight;
@@ -80,11 +80,11 @@ function weightsForDay(dayOfWeek) {
   }, {});
   if (dayOfWeek === 6) {
     weights.courrier -= 0.14;
-    weights.presse += 0.05;
+    weights.ppi += 0.05;
     weights.colis += 0.09;
   } else if (dayOfWeek === 0) {
     weights.courrier -= 0.08;
-    weights.presse += 0.03;
+    weights.ppi += 0.03;
     weights.colis += 0.05;
   }
   return weights;
@@ -123,13 +123,6 @@ function buildTournee(site, index, bucket, horizon, date) {
 // eor(objects, coefficients) -> total EOR pour un jeu d'objets donné
 export function computeEor(objects, coefficients) {
   return OBJECT_TYPES.reduce((sum, type) => sum + (objects[type.key] || 0) * coefficients[type.key], 0);
-}
-
-export function computeEorByFlux(objects, coefficients, flux) {
-  return OBJECT_TYPES.filter((t) => flux === 'tous' || t.flux === flux).reduce(
-    (sum, type) => sum + (objects[type.key] || 0) * coefficients[type.key],
-    0
-  );
 }
 
 export function generateMockData() {
