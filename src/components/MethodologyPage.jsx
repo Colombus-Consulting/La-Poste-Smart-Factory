@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Scale, GitBranch, ShieldCheck, Palette } from 'lucide-react';
+import { Layers, Scale, GitBranch, ShieldCheck, Palette, Users } from 'lucide-react';
 
 const SECTIONS = [
   {
@@ -28,9 +28,15 @@ const SECTIONS = [
   },
   {
     icon: Layers,
-    title: 'Consolidation',
+    title: 'Consolidation : on raisonne en agents, pas en EOR',
     body:
-      "Le levier de décision : identifier les tournées en sous-charge (excédent d'EOR libres) et les tournées en surcharge (déficit) au sein d'un même établissement, puis proposer un déplacement de charge ou d'agents entre sites.",
+      "Un EOR appartient à un site et ne se redistribue pas finement vers un autre. Ce qui peut se transférer, c'est un agent entier (1 tournée = 1 agent). Le déséquilibre est d'abord absorbé au sein d'un même site (les agents y sont interchangeables) ; s'il reste un déséquilibre net au niveau du site, une suggestion de transfert d'agent vers un autre site est proposée, et doit être validée par le directeur d'établissement avant d'être effective.",
+  },
+  {
+    icon: Users,
+    title: 'Une vue différente selon le rôle',
+    body:
+      "Un responsable de site n'a accès qu'aux données de son propre site. La vue de l'ensemble des sites, la comparaison entre sites et la validation des suggestions de transfert ne sont possibles qu'en Vue Admin (directeur d'établissement). Le sélecteur « Vue » dans la barre latérale permet de prévisualiser ces deux perspectives.",
   },
 ];
 

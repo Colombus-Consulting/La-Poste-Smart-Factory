@@ -1,6 +1,6 @@
 import React from 'react';
-import { LayoutGrid, Building2, Route, Shuffle, Table2, BookOpen, Truck } from 'lucide-react';
-import { HORIZONS } from '../data/mockData';
+import { LayoutGrid, Building2, Route, Shuffle, Table2, Database, BookOpen, Truck } from 'lucide-react';
+import { HORIZONS, SITES } from '../data/mockData';
 
 const NAV_ITEMS = [
   { key: 'global', label: 'Vue globale', icon: LayoutGrid },
@@ -8,10 +8,11 @@ const NAV_ITEMS = [
   { key: 'tournee', label: 'Par tournée', icon: Route },
   { key: 'consolidation', label: 'Consolidation', icon: Shuffle },
   { key: 'matrice', label: 'Matrice EOR', icon: Table2 },
+  { key: 'sources', label: 'Sources de données', icon: Database },
   { key: 'methodologie', label: 'Méthodologie', icon: BookOpen },
 ];
 
-export default function Sidebar({ view, onViewChange, horizon, onHorizonChange }) {
+export default function Sidebar({ view, onViewChange, horizon, onHorizonChange, role, onRoleChange }) {
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col bg-slate-900 text-slate-200">
       <div className="flex items-center gap-2 px-5 py-5 border-b border-slate-700/60">
@@ -22,6 +23,22 @@ export default function Sidebar({ view, onViewChange, horizon, onHorizonChange }
           <div className="text-sm font-semibold text-white">Smart Factory</div>
           <div className="text-[11px] text-slate-400">La Poste</div>
         </div>
+      </div>
+
+      <div className="px-3 pt-4">
+        <div className="mb-2 px-1 text-[11px] uppercase tracking-wide text-slate-400">Vue</div>
+        <select
+          value={role}
+          onChange={(e) => onRoleChange(e.target.value)}
+          className="w-full rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs font-medium text-white"
+        >
+          <option value="admin">Vue Admin (Établissement)</option>
+          {SITES.map((s) => (
+            <option key={s.id} value={s.id}>
+              Vue site — {s.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">

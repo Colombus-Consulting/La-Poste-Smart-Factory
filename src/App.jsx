@@ -9,6 +9,7 @@ import TourneeDetail from './components/TourneeDetail';
 import ConsolidationPanel from './components/ConsolidationPanel';
 import DistributionPanel from './components/DistributionPanel';
 import EorMatrixPage from './components/EorMatrixPage';
+import DataSourcesPage from './components/DataSourcesPage';
 import MethodologyPage from './components/MethodologyPage';
 import {
   generateMockData,
@@ -52,21 +53,32 @@ export default function App() {
   const [view, setView] = useState('global');
   const [horizon, setHorizon] = useState('J');
   const [unit, setUnit] = useState('eor');
+  const [role, setRole] = useState('admin');
   const [siteFilter, setSiteFilter] = useState('');
   const [tourneeFilter, setTourneeFilter] = useState('');
   const [selectedTourneeId, setSelectedTourneeId] = useState('');
   const [coefficients, setCoefficients] = useState(defaultCoefficients());
+  const [suggestionStatuses, setSuggestionStatuses] = useState({});
 
   const horizonInfo = HORIZONS.find((h) => h.key === horizon);
   const { date, sites: allSites } = dataByHorizon[horizon];
 
+  const isAdmin = role === 'admin';
+  const effectiveSiteFilter = isAdmin ? siteFilter : role;
+
+  function handleRoleChange(newRole) {
+    setRole(newRole);
+    setSiteFilter('');
+    setTourneeFilter('');
+  }
+
   const filteredSites = useMemo(() => {
-    let sites = siteFilter ? allSites.filter((s) => s.id === siteFilter) : allSites;
+    let sites = effectiveSiteFilter ? allSites.filter((s) => s.id === effectiveSiteFilter) : allSites;
     if (tourneeFilter) {
       sites = sites.map((s) => ({ ...s, tournees: s.tournees.filter((t) => t.id === tourneeFilter) }));
     }
     return sites;
-  }, [allSites, siteFilter, tourneeFilter]);
+  }, [allSites, effectiveSiteFilter, tourneeFilter]);
 
   const kpis = useMemo(() => computeKpis(filteredSites, coefficients), [filteredSites, coefficients]);
 
@@ -83,18 +95,35 @@ export default function App() {
     setCoefficients((prev) => ({ ...prev, [key]: value }));
   }
 
+  function handleValidateSuggestion(statusKey) {
+    setSuggestionStatuses((prev) => ({ ...prev, [statusKey]: 'validé' }));
+  }
+
+  function handleRejectSuggestion(statusKey) {
+    setSuggestionStatuses((prev) => ({ ...prev, [statusKey]: 'rejeté' }));
+  }
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-100">
-      <Sidebar view={view} onViewChange={setView} horizon={horizon} onHorizonChange={setHorizon} />
+      <Sidebar
+        view={view}
+        onViewChange={setView}
+        horizon={horizon}
+        onHorizonChange={setHorizon}
+        role={role}
+        onRoleChange={handleRoleChange}
+      />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header horizonInfo={horizonInfo} date={date} />
+        <Header horizonInfo={horizonInfo} date={date} role={role} />
 
-        {view !== 'matrice' && view !== 'methodologie' && (
+        {view !== 'matrice' && view !== 'methodologie' && view !== 'sources' && (
           <FilterBar
             unit={unit}
             onUnitChange={setUnit}
-            siteFilter={siteFilter}
+            allSites={allSites}
+            lockedSiteId={isAdmin ? null : role}
+            siteFilter={effectiveSiteFilter}
             onSiteFilterChange={setSiteFilter}
             tourneeFilter={tourneeFilter}
             onTourneeFilterChange={setTourneeFilter}
@@ -115,7 +144,15 @@ export default function App() {
                   />
                 </div>
                 <div className="space-y-4">
-                  <ConsolidationPanel sites={allSites} coefficients={coefficients} />
+                  <ConsolidationPanel
+                    sites={allSites}
+                    coefficients={coefficients}
+                    horizon={horizon}
+                    role={role}
+                    statuses={suggestionStatuses}
+                    onValidate={handleValidateSuggestion}
+                    onReject={handleRejectSuggestion}
+                  />
                 </div>
               </div>
               <div className="px-6 pb-6">
@@ -149,7 +186,15 @@ export default function App() {
 
           {view === 'consolidation' && (
             <div className="mx-auto max-w-3xl p-6">
-              <ConsolidationPanel sites={allSites} coefficients={coefficients} />
+              <ConsolidationPanel
+                sites={allSites}
+                coefficients={coefficients}
+                horizon={horizon}
+                role={role}
+                statuses={suggestionStatuses}
+                onValidate={handleValidateSuggestion}
+                onReject={handleRejectSuggestion}
+              />
             </div>
           )}
 
@@ -160,6 +205,8 @@ export default function App() {
               onReset={() => setCoefficients(defaultCoefficients())}
             />
           )}
+
+          {view === 'sources' && <DataSourcesPage />}
 
           {view === 'methodologie' && <MethodologyPage />}
         </main>

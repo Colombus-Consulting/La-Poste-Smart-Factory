@@ -1,5 +1,4 @@
 import React from 'react';
-import { SITES } from '../data/mockData';
 import InfoTip from './InfoTip';
 
 function ToggleGroup({ options, value, onChange }) {
@@ -23,13 +22,14 @@ function ToggleGroup({ options, value, onChange }) {
 export default function FilterBar({
   unit,
   onUnitChange,
+  allSites,
   siteFilter,
   onSiteFilterChange,
   tourneeFilter,
   onTourneeFilterChange,
+  lockedSiteId,
 }) {
-  const site = SITES.find((s) => s.id === siteFilter);
-  const tournees = site ? site.buckets.map((_, i) => `${site.id}-t${String(i + 1).padStart(2, '0')}`) : [];
+  const site = allSites.find((s) => s.id === siteFilter);
 
   return (
     <div className="flex flex-wrap items-center gap-4 border-b border-slate-200 bg-white px-6 py-3">
@@ -49,14 +49,15 @@ export default function FilterBar({
       <div className="ml-auto flex items-center gap-2">
         <select
           value={siteFilter}
+          disabled={!!lockedSiteId}
           onChange={(e) => {
             onSiteFilterChange(e.target.value);
             onTourneeFilterChange('');
           }}
-          className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
+          className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 disabled:opacity-60"
         >
-          <option value="">Tous les sites</option>
-          {SITES.map((s) => (
+          {!lockedSiteId && <option value="">Tous les sites</option>}
+          {allSites.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
@@ -69,9 +70,9 @@ export default function FilterBar({
           className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 disabled:opacity-40"
         >
           <option value="">Toutes les tournées</option>
-          {tournees.map((id, i) => (
-            <option key={id} value={id}>
-              Tournée {String(i + 1).padStart(2, '0')}
+          {site?.tournees.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name.split(' — ')[1] || t.name}
             </option>
           ))}
         </select>

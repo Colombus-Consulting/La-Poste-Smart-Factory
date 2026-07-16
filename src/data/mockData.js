@@ -32,6 +32,17 @@ function bucketPlan(sous, optimal, surcharge) {
   return plan;
 }
 
+export function isSaturday(date) {
+  return date.getDay() === 6;
+}
+
+// Le samedi, deux fois moins d'agents travaillent et chacun couvre 2 tournées :
+// on rééchantillonne la liste de buckets sur un nombre de lignes moitié moindre
+// (capacité inchangée par agent), ce qui reproduit naturellement "moitié moins d'EOR".
+function resampleBuckets(buckets, targetCount) {
+  return Array.from({ length: targetCount }, (_, i) => buckets[Math.floor((i * buckets.length) / targetCount)]);
+}
+
 const BUCKET_RANGES = {
   sous: [500, 700],
   optimal: [700, 800],
@@ -90,9 +101,10 @@ function weightsForDay(dayOfWeek) {
   return weights;
 }
 
-function buildTournee(site, index, bucket, horizon, date) {
+function buildTournee(site, index, bucket, horizon, date, mergedCount) {
   const id = `${site.id}-t${String(index + 1).padStart(2, '0')}`;
-  const name = `${site.name} — Tournée ${String(index + 1).padStart(2, '0')}`;
+  const agentLabel = mergedCount > 1 ? `Agent ${String(index + 1).padStart(2, '0')}` : `Tournée ${String(index + 1).padStart(2, '0')}`;
+  const name = `${site.name} — ${agentLabel}`;
   const rng = rngFromSeed(`${id}|${horizon.key}`);
   const [min, max] = BUCKET_RANGES[bucket];
   const targetEorRef = randRange(rng, min, max);
@@ -116,6 +128,7 @@ function buildTournee(site, index, bucket, horizon, date) {
     siteId: site.id,
     bucket,
     capacite: CAPACITE_REF,
+    mergedCount,
     objects: { ref: objectsRef, reel: objectsReel },
   };
 }
@@ -133,12 +146,16 @@ export function generateMockData() {
     const date = new Date(today);
     date.setDate(date.getDate() + horizon.offset);
 
+    const saturday = isSaturday(date);
+
     const sites = SITES.map((site) => {
-      const tournees = site.buckets.map((bucket, index) => buildTournee(site, index, bucket, horizon, date));
-      return { id: site.id, name: site.name, date, tournees };
+      const mergedCount = saturday ? 2 : 1;
+      const buckets = saturday ? resampleBuckets(site.buckets, Math.ceil(site.buckets.length / 2)) : site.buckets;
+      const tournees = buckets.map((bucket, index) => buildTournee(site, index, bucket, horizon, date, mergedCount));
+      return { id: site.id, name: site.name, date, saturday, tournees };
     });
 
-    dataByHorizon[horizon.key] = { date, sites };
+    dataByHorizon[horizon.key] = { date, saturday, sites };
   }
 
   return dataByHorizon;

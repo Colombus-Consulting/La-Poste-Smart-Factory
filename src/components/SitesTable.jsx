@@ -29,6 +29,7 @@ export default function SitesTable({ sites, coefficients, unit, onSelectTournee 
           const totalCapacite = site.tournees.reduce((s, t) => s + t.capacite, 0);
           const ratioSite = totalCapacite ? totalCharge / totalCapacite : 0;
           const isCollapsed = collapsed[site.id];
+          const saturday = site.tournees[0]?.mergedCount > 1;
 
           return (
             <div key={site.id} className="border-b border-slate-100 last:border-b-0">
@@ -39,7 +40,9 @@ export default function SitesTable({ sites, coefficients, unit, onSelectTournee 
                 <div className="flex items-center gap-2">
                   {isCollapsed ? <ChevronRight size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
                   <span className="text-sm font-semibold text-slate-800">{site.name}</span>
-                  <span className="text-xs text-slate-400">{site.tournees.length} tournées</span>
+                  <span className="text-xs text-slate-400">
+                    {site.tournees.length} {saturday ? 'agents (samedi)' : 'tournées'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-6">
                   <span className="text-xs text-slate-500">
@@ -73,7 +76,14 @@ export default function SitesTable({ sites, coefficients, unit, onSelectTournee 
                           onClick={() => onSelectTournee(t.id)}
                           className="cursor-pointer border-t border-slate-50 hover:bg-slate-50"
                         >
-                          <td className="px-5 py-2 font-medium text-slate-700">{t.name}</td>
+                          <td className="px-5 py-2 font-medium text-slate-700">
+                            {t.name}
+                            {t.mergedCount > 1 && (
+                              <span className="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-normal text-slate-500">
+                                2 tournées
+                              </span>
+                            )}
+                          </td>
                           <td className="px-5 py-2 text-slate-600">
                             {unit === 'eor' ? Math.round(m.chargeEor).toLocaleString('fr-FR') : m.chargeObjets.toLocaleString('fr-FR')}
                           </td>
