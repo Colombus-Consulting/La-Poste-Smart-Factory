@@ -106,22 +106,6 @@ export function isSaturday(date) {
   return date.getDay() === 6;
 }
 
-// Le samedi, deux fois moins d'agents travaillent et chacun couvre 2 tournées : on rééchantillonne
-// la liste d'agents sur un effectif moitié moindre (capacité inchangée par agent), ce qui reproduit
-// naturellement "moitié moins d'EOR". Les agents renfort/sécable sont toujours conservés dans
-// l'échantillon samedi, pour que le mécanisme reste testable tous les jours.
-function resampleAgents(entries, targetCount) {
-  const special = entries.filter((e) => e.type !== 'normale');
-  const normal = entries.filter((e) => e.type === 'normale');
-  const slotsForNormal = Math.max(0, targetCount - special.length);
-  const sampledNormal =
-    slotsForNormal > 0
-      ? Array.from({ length: slotsForNormal }, (_, i) => normal[Math.floor((i * normal.length) / slotsForNormal)])
-      : [];
-  const chosenIds = new Set([...special, ...sampledNormal].map((e) => e.id));
-  return entries.filter((e) => chosenIds.has(e.id));
-}
-
 // --- PRNG déterministe (xmur3 + mulberry32) pour des données stables entre rendus ---
 function xmur3(str) {
   let h = 1779033703 ^ str.length;
@@ -202,7 +186,7 @@ function decomposeIntoObjects(targetEor, weights, rng) {
   return objects;
 }
 
-function buildAgentTournee(site, entry, horizon, date, mergedCount) {
+function buildAgentTournee(site, entry, horizon, date) {
   const { id } = entry;
   const name = `${site.name} — Tournée ${id}`;
   const weights = weightsForDay(date.getDay());
@@ -219,7 +203,6 @@ function buildAgentTournee(site, entry, horizon, date, mergedCount) {
       type: 'renfort',
       capaciteDefaut: 0,
       volumeRedistribuableDefaut: entry.volumeRedistribuable,
-      mergedCount,
       objects: { ref: objects, reel: objects },
     };
   }
@@ -244,7 +227,6 @@ function buildAgentTournee(site, entry, horizon, date, mergedCount) {
     siteId: site.id,
     type: entry.type,
     capaciteDefaut: entry.capacite,
-    mergedCount,
     ...(entry.type === 'secable' ? { voisinageDefaut: entry.voisinage } : {}),
     objects: { ref: objectsRef, reel: objectsReel },
   };
@@ -265,11 +247,11 @@ export function generateMockData() {
 
     const saturday = isSaturday(date);
 
+    // Chaque site garde l'intégralité de ses agents, sans trou de numérotation, quel que soit le
+    // jour : le voisinage d'une tournée sécable doit toujours pouvoir trouver ses receveurs.
     const sites = SITES.map((site) => {
       const entries = SITES_CONFIG[site.configKey];
-      const mergedCount = saturday ? 2 : 1;
-      const activeEntries = saturday ? resampleAgents(entries, Math.ceil(entries.length / 2)) : entries;
-      const built = activeEntries.map((entry) => buildAgentTournee(site, entry, horizon, date, mergedCount));
+      const built = entries.map((entry) => buildAgentTournee(site, entry, horizon, date));
       // Le renfort n'est jamais un agent "normal" comptabilisé dans les totaux/statuts : il est
       // exposé à part (site.renfort), les tournées normales/sécables restent dans site.tournees.
       const renfort = built.find((t) => t.type === 'renfort') || null;

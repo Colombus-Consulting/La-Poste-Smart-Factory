@@ -87,7 +87,6 @@ export default function SitesTable({
           const totalCapacite = site.tournees.reduce((s, t) => s + t.capacite, 0);
           const ratioSite = totalCapacite ? totalCharge / totalCapacite : 0;
           const isCollapsed = collapsed[site.id];
-          const saturday = site.tournees[0]?.mergedCount > 1;
           const renfortActif = site.renfort ? renfortActive[site.id] !== false : false;
 
           return (
@@ -99,9 +98,7 @@ export default function SitesTable({
                 <div className="flex items-center gap-2">
                   {isCollapsed ? <ChevronRight size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
                   <span className="text-sm font-semibold text-slate-800">{site.name}</span>
-                  <span className="text-xs text-slate-400">
-                    {site.tournees.length} {saturday ? 'agents (samedi)' : 'tournées'}
-                  </span>
+                  <span className="text-xs text-slate-400">{site.tournees.length} tournées</span>
                 </div>
                 <div className="flex items-center gap-6">
                   <span className="text-xs text-slate-500">
@@ -165,11 +162,6 @@ export default function SitesTable({
                               <td className="px-5 py-2 font-medium text-slate-700">
                                 {t.name}
                                 <TypeBadge type={t.type} />
-                                {t.mergedCount > 1 && (
-                                  <span className="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-normal text-slate-500">
-                                    2 tournées
-                                  </span>
-                                )}
                                 {isSecable && (
                                   <label
                                     className="ml-2 inline-flex items-center gap-1 text-[10px] font-normal text-purple-700"
