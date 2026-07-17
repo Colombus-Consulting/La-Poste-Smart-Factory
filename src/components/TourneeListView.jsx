@@ -40,22 +40,43 @@ export default function TourneeListView({ sites, coefficients, unit, onSelectTou
           <tbody>
             {rows.map(({ t, siteName, chargeEor, chargeObjets, ratio, status }) => (
               <tr key={t.id} onClick={() => onSelectTournee(t.id)} className="cursor-pointer border-t border-slate-50 hover:bg-slate-50">
-                <td className="px-5 py-2 font-medium text-slate-700">{t.name}</td>
+                <td className="px-5 py-2 font-medium text-slate-700">
+                  {t.name}
+                  {t.type === 'secable' && (
+                    <span className="ml-1.5 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">Sécable</span>
+                  )}
+                </td>
                 <td className="px-5 py-2 text-slate-500">{siteName}</td>
                 <td className="px-5 py-2 text-slate-600">
-                  {unit === 'eor' ? Math.round(chargeEor).toLocaleString('fr-FR') : chargeObjets.toLocaleString('fr-FR')}
+                  {t.released ? (
+                    <span className="text-slate-400">—</span>
+                  ) : unit === 'eor' ? (
+                    Math.round(chargeEor).toLocaleString('fr-FR')
+                  ) : (
+                    chargeObjets.toLocaleString('fr-FR')
+                  )}
                 </td>
-                <td className="px-5 py-2 text-slate-500">{t.capacite.toLocaleString('fr-FR')}</td>
+                <td className="px-5 py-2 text-slate-500">{Math.round(t.capacite).toLocaleString('fr-FR')}</td>
                 <td className="px-5 py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-28">
-                      <UtilizationBar ratio={ratio} />
+                  {t.released ? (
+                    <span className="text-xs text-slate-400">redistribuée</span>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="w-28">
+                        <UtilizationBar ratio={ratio} />
+                      </div>
+                      <span className="text-xs text-slate-500">{(ratio * 100).toFixed(0)}%</span>
                     </div>
-                    <span className="text-xs text-slate-500">{(ratio * 100).toFixed(0)}%</span>
-                  </div>
+                  )}
                 </td>
                 <td className="px-5 py-2">
-                  <StatusPastille status={status} />
+                  {t.released ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700">
+                      Redistribuée
+                    </span>
+                  ) : (
+                    <StatusPastille status={status} />
+                  )}
                 </td>
               </tr>
             ))}

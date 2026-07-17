@@ -7,19 +7,21 @@ const SOURCES = [
     site: 'Guichen',
     statut: 'incomplete',
     maj: 'Mai 2026',
-    remarque: "Données non transmises par le site en mai 2026 — une estimation basée sur la moyenne glissante des mois précédents a été appliquée en remplacement.",
+    remarque:
+      "Fictif, calibré sur le profil Montfort (pas de données réelles à ce stade). Données non transmises par le site en mai 2026 — une estimation basée sur la moyenne glissante des mois précédents a été appliquée en remplacement.",
   },
   {
     site: 'Messac',
-    statut: 'ok',
-    maj: "Ce matin",
-    remarque: 'Flux transmis quotidiennement, aucune anomalie détectée.',
+    statut: 'incomplete',
+    maj: 'Juillet 2026',
+    remarque: 'Fictif, calibré sur le profil Montfort (pas de données réelles à ce stade). À remplacer par un vrai flux quand disponible.',
   },
   {
     site: 'Montfort',
     statut: 'ok',
     maj: '08/07/2026',
-    remarque: "Source : extraction RH consolidée (fichier « Données RH consolidées »), onglet MFData T.",
+    remarque:
+      "Seul site réel du PoC : charge et capacité par agent issues de l'extraction RH consolidée (fichier « Données RH consolidées »), onglet MFData T, 53 semaines 2025.",
   },
 ];
 

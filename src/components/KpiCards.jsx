@@ -1,7 +1,6 @@
 import React from 'react';
 import { Gauge, Package, Boxes, AlertTriangle, TrendingDown, PiggyBank } from 'lucide-react';
 import InfoTip from './InfoTip';
-import { CAPACITE_REF } from '../data/mockData';
 
 function Card({ icon: Icon, label, tip, value, suffix, delta, deltaGood, accent, children }) {
   return (
@@ -68,7 +67,7 @@ export default function KpiCards({ kpis }) {
       <Card
         icon={Boxes}
         label="Capacité totale"
-        tip={`Somme des capacités maximales des tournées affichées (${CAPACITE_REF} EOR par tournée).`}
+        tip="Somme des capacités maximales des tournées affichées (chaque agent a sa propre capacité EOR)."
         value={capaciteTotale.toLocaleString('fr-FR')}
         suffix="EOR"
         accent="bg-slate-100 text-slate-600"

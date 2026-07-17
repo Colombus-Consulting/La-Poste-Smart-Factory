@@ -47,22 +47,25 @@ export default function FilterBar({
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <select
-          value={siteFilter}
-          disabled={!!lockedSiteId}
-          onChange={(e) => {
-            onSiteFilterChange(e.target.value);
-            onTourneeFilterChange('');
-          }}
-          className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 disabled:opacity-60"
-        >
-          {!lockedSiteId && <option value="">Tous les sites</option>}
-          {allSites.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        {lockedSiteId ? (
+          <span className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">{site?.name}</span>
+        ) : (
+          <select
+            value={siteFilter}
+            onChange={(e) => {
+              onSiteFilterChange(e.target.value);
+              onTourneeFilterChange('');
+            }}
+            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
+          >
+            <option value="">Tous les sites</option>
+            {allSites.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           value={tourneeFilter}
           onChange={(e) => onTourneeFilterChange(e.target.value)}

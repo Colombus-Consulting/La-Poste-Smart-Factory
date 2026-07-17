@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Building2, Route, Shuffle, Table2, Database, BookOpen, Truck } from 'lucide-react';
+import { LayoutGrid, Building2, Route, Shuffle, Database, BookOpen, Settings, Truck } from 'lucide-react';
 import { HORIZONS, SITES } from '../data/mockData';
 
 const NAV_ITEMS = [
@@ -7,9 +7,9 @@ const NAV_ITEMS = [
   { key: 'site', label: 'Par site', icon: Building2 },
   { key: 'tournee', label: 'Par tournée', icon: Route },
   { key: 'consolidation', label: 'Consolidation', icon: Shuffle },
-  { key: 'matrice', label: 'Matrice EOR', icon: Table2 },
   { key: 'sources', label: 'Sources de données', icon: Database },
   { key: 'methodologie', label: 'Méthodologie', icon: BookOpen },
+  { key: 'parametres', label: 'Paramètres', icon: Settings },
 ];
 
 export default function Sidebar({ view, onViewChange, horizon, onHorizonChange, role, onRoleChange }) {

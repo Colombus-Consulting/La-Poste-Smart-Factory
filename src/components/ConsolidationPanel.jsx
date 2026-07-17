@@ -1,13 +1,18 @@
 import React, { useMemo } from 'react';
 import { ArrowRight, Shuffle, Check, X as XIcon, Clock } from 'lucide-react';
-import { computeEor, CAPACITE_REF } from '../data/mockData';
+import { computeEor } from '../data/mockData';
 import InfoTip from './InfoTip';
 
 function aggregateSite(site, coefficients) {
   const totalCharge = site.tournees.reduce((s, t) => s + computeEor(t.objects.reel, coefficients), 0);
   const totalCapacite = site.tournees.reduce((s, t) => s + t.capacite, 0);
+  const nbAgents = site.tournees.length;
   const ratio = totalCapacite ? totalCharge / totalCapacite : 0;
-  return { id: site.id, name: site.name, nbAgents: site.tournees.length, totalCharge, totalCapacite, ratio };
+  // Capacité "moyenne" d'un agent de ce site : les capacités variant beaucoup d'un agent à
+  // l'autre, c'est cette moyenne (pas une constante uniforme) qui sert à convertir un écart
+  // EOR en nombre d'agents entiers.
+  const avgCapacite = nbAgents ? totalCapacite / nbAgents : 0;
+  return { id: site.id, name: site.name, nbAgents, totalCharge, totalCapacite, avgCapacite, ratio };
 }
 
 // On ne raisonne jamais en EOR entre sites : seul un agent entier (1 tournée = 1 agent)
@@ -16,14 +21,14 @@ function aggregateSite(site, coefficients) {
 // net d'au moins un agent au niveau du site.
 function buildAgentSuggestions(aggregates) {
   const donors = aggregates
-    .filter((s) => s.ratio < 0.85)
-    .map((s) => ({ ...s, remaining: Math.floor((s.totalCapacite - s.totalCharge) / CAPACITE_REF) }))
+    .filter((s) => s.ratio < 0.85 && s.avgCapacite > 0)
+    .map((s) => ({ ...s, remaining: Math.floor((s.totalCapacite - s.totalCharge) / s.avgCapacite) }))
     .filter((s) => s.remaining > 0)
     .sort((a, b) => b.remaining - a.remaining);
 
   const receivers = aggregates
-    .filter((s) => s.ratio > 1)
-    .map((s) => ({ ...s, remaining: Math.ceil((s.totalCharge - s.totalCapacite) / CAPACITE_REF) }))
+    .filter((s) => s.ratio > 1 && s.avgCapacite > 0)
+    .map((s) => ({ ...s, remaining: Math.ceil((s.totalCharge - s.totalCapacite) / s.avgCapacite) }))
     .sort((a, b) => b.remaining - a.remaining);
 
   const suggestions = [];
@@ -69,11 +74,11 @@ export default function ConsolidationPanel({ sites, coefficients, horizon, role,
   const visibleSuggestions = isAdmin ? suggestions : suggestions.filter((s) => s.fromId === role || s.toId === role);
 
   const nbAgentsDisponibles = aggregates
-    .filter((s) => s.ratio < 0.85)
-    .reduce((sum, s) => sum + Math.max(0, Math.floor((s.totalCapacite - s.totalCharge) / CAPACITE_REF)), 0);
+    .filter((s) => s.ratio < 0.85 && s.avgCapacite > 0)
+    .reduce((sum, s) => sum + Math.max(0, Math.floor((s.totalCapacite - s.totalCharge) / s.avgCapacite)), 0);
   const nbAgentsManquants = aggregates
-    .filter((s) => s.ratio > 1)
-    .reduce((sum, s) => sum + Math.ceil((s.totalCharge - s.totalCapacite) / CAPACITE_REF), 0);
+    .filter((s) => s.ratio > 1 && s.avgCapacite > 0)
+    .reduce((sum, s) => sum + Math.ceil((s.totalCharge - s.totalCapacite) / s.avgCapacite), 0);
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

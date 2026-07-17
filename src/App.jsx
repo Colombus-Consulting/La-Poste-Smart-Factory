@@ -3,21 +3,30 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import FilterBar from './components/FilterBar';
 import KpiCards from './components/KpiCards';
+import MultiSiteSummary from './components/MultiSiteSummary';
 import SitesTable from './components/SitesTable';
 import TourneeListView from './components/TourneeListView';
 import TourneeDetail from './components/TourneeDetail';
 import ConsolidationPanel from './components/ConsolidationPanel';
 import DistributionPanel from './components/DistributionPanel';
-import EorMatrixPage from './components/EorMatrixPage';
+import ParametresPage from './components/ParametresPage';
 import DataSourcesPage from './components/DataSourcesPage';
 import MethodologyPage from './components/MethodologyPage';
 import {
   generateMockData,
   HORIZONS,
   defaultCoefficients,
+  defaultCapacites,
+  defaultRenfortActive,
+  defaultCleRenfort,
+  defaultVolumeRedistribuable,
+  defaultSecableActive,
+  defaultSecableVoisinage,
+  defaultCleSecable,
   computeEor,
   CAPACITE_REF,
 } from './data/mockData';
+import { applyRedistribution } from './data/redistribution';
 
 function computeKpis(sites, coefficients) {
   let chargeTotale = 0;
@@ -51,7 +60,7 @@ export default function App() {
   const dataByHorizon = useMemo(() => generateMockData(), []);
 
   const [view, setView] = useState('global');
-  const [horizon, setHorizon] = useState('J');
+  const [horizon, setHorizon] = useState('J+1');
   const [unit, setUnit] = useState('eor');
   const [role, setRole] = useState('admin');
   const [siteFilter, setSiteFilter] = useState('');
@@ -60,8 +69,19 @@ export default function App() {
   const [coefficients, setCoefficients] = useState(defaultCoefficients());
   const [suggestionStatuses, setSuggestionStatuses] = useState({});
 
+  // Paramètres (onglet dédié) : capacité par agent, clés de répartition renfort/sécable,
+  // voisinage sécable, cases à cocher renfort/sécable actives.
+  const [capacites, setCapacites] = useState(defaultCapacites());
+  const [renfortActive, setRenfortActive] = useState(defaultRenfortActive());
+  const [cleRenfort, setCleRenfort] = useState(defaultCleRenfort());
+  const [volumeRedistribuable, setVolumeRedistribuable] = useState(defaultVolumeRedistribuable());
+  const [secableActive, setSecableActive] = useState(defaultSecableActive());
+  const [secableVoisinage, setSecableVoisinage] = useState(defaultSecableVoisinage());
+  const [cleSecable, setCleSecable] = useState(defaultCleSecable());
+  const [secableManual, setSecableManual] = useState({});
+
   const horizonInfo = HORIZONS.find((h) => h.key === horizon);
-  const { date, sites: allSites } = dataByHorizon[horizon];
+  const { date, sites: rawSites } = dataByHorizon[horizon];
 
   const isAdmin = role === 'admin';
   const effectiveSiteFilter = isAdmin ? siteFilter : role;
@@ -71,6 +91,28 @@ export default function App() {
     setSiteFilter('');
     setTourneeFilter('');
   }
+
+  const redistributionOptions = useMemo(
+    () => ({
+      capacites,
+      renfortActive,
+      cleRenfort,
+      volumeRedistribuable,
+      secableActive,
+      secableVoisinage,
+      cleSecable,
+      secableManual,
+    }),
+    [capacites, renfortActive, cleRenfort, volumeRedistribuable, secableActive, secableVoisinage, cleSecable, secableManual]
+  );
+
+  // Toutes les tournées/agents affichés dans l'app découlent de cet ajustement : capacité live
+  // (Paramètres) + redistribution renfort/sécable en cours. Le reste du code consomme ces
+  // données ajustées exactement comme des données brutes.
+  const allSites = useMemo(
+    () => rawSites.map((site) => ({ ...site, ...applyRedistribution(site, redistributionOptions) })),
+    [rawSites, redistributionOptions]
+  );
 
   const filteredSites = useMemo(() => {
     let sites = effectiveSiteFilter ? allSites.filter((s) => s.id === effectiveSiteFilter) : allSites;
@@ -85,7 +127,7 @@ export default function App() {
   const selectedTournee = useMemo(() => {
     if (!selectedTourneeId) return null;
     for (const site of allSites) {
-      const t = site.tournees.find((tt) => tt.id === selectedTourneeId);
+      const t = site.tournees.find((tt) => tt.id === selectedTourneeId) || (site.renfort?.id === selectedTourneeId ? site.renfort : null);
       if (t) return { tournee: t, site };
     }
     return null;
@@ -103,6 +145,23 @@ export default function App() {
     setSuggestionStatuses((prev) => ({ ...prev, [statusKey]: 'rejeté' }));
   }
 
+  function handleToggleRenfort(siteId, active) {
+    setRenfortActive((prev) => ({ ...prev, [siteId]: active }));
+  }
+
+  function handleToggleSecable(tourneeId, active) {
+    setSecableActive((prev) => ({ ...prev, [tourneeId]: active }));
+  }
+
+  function handleSecableManualChange(tourneeId, recipientId, value) {
+    setSecableManual((prev) => ({
+      ...prev,
+      [tourneeId]: { ...prev[tourneeId], [recipientId]: value },
+    }));
+  }
+
+  const showMultiSiteSummary = view === 'global' && isAdmin && !siteFilter;
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-100">
       <Sidebar
@@ -117,7 +176,7 @@ export default function App() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header horizonInfo={horizonInfo} date={date} role={role} />
 
-        {view !== 'matrice' && view !== 'methodologie' && view !== 'sources' && (
+        {view !== 'parametres' && view !== 'methodologie' && view !== 'sources' && (
           <FilterBar
             unit={unit}
             onUnitChange={setUnit}
@@ -133,6 +192,9 @@ export default function App() {
         <main className="flex-1 overflow-y-auto">
           {view === 'global' && (
             <>
+              {showMultiSiteSummary && (
+                <MultiSiteSummary sites={allSites} coefficients={coefficients} onSelectSite={setSiteFilter} />
+              )}
               <KpiCards kpis={kpis} />
               <div className="grid grid-cols-1 gap-4 px-6 pb-6 lg:grid-cols-3">
                 <div className="lg:col-span-2">
@@ -141,6 +203,13 @@ export default function App() {
                     coefficients={coefficients}
                     unit={unit}
                     onSelectTournee={setSelectedTourneeId}
+                    renfortActive={renfortActive}
+                    onToggleRenfort={handleToggleRenfort}
+                    secableActive={secableActive}
+                    onToggleSecable={handleToggleSecable}
+                    secableVoisinage={secableVoisinage}
+                    secableManual={secableManual}
+                    onSecableManualChange={handleSecableManualChange}
                   />
                 </div>
                 <div className="space-y-4">
@@ -169,6 +238,13 @@ export default function App() {
                 coefficients={coefficients}
                 unit={unit}
                 onSelectTournee={setSelectedTourneeId}
+                renfortActive={renfortActive}
+                onToggleRenfort={handleToggleRenfort}
+                secableActive={secableActive}
+                onToggleSecable={handleToggleSecable}
+                secableVoisinage={secableVoisinage}
+                secableManual={secableManual}
+                onSecableManualChange={handleSecableManualChange}
               />
             </div>
           )}
@@ -198,11 +274,28 @@ export default function App() {
             </div>
           )}
 
-          {view === 'matrice' && (
-            <EorMatrixPage
+          {view === 'parametres' && (
+            <ParametresPage
               coefficients={coefficients}
-              onChange={handleCoefficientChange}
-              onReset={() => setCoefficients(defaultCoefficients())}
+              onCoefficientChange={handleCoefficientChange}
+              onResetCoefficients={() => setCoefficients(defaultCoefficients())}
+              capacites={capacites}
+              onCapaciteChange={(id, value) => setCapacites((prev) => ({ ...prev, [id]: value }))}
+              onResetCapacites={() => setCapacites(defaultCapacites())}
+              cleRenfort={cleRenfort}
+              onCleRenfortChange={(siteId, value) => setCleRenfort((prev) => ({ ...prev, [siteId]: value }))}
+              volumeRedistribuable={volumeRedistribuable}
+              onVolumeRedistribuableChange={(id, value) => setVolumeRedistribuable((prev) => ({ ...prev, [id]: value }))}
+              cleSecable={cleSecable}
+              onCleSecableChange={(id, value) => setCleSecable((prev) => ({ ...prev, [id]: value }))}
+              secableVoisinage={secableVoisinage}
+              onSecableVoisinageChange={(id, value) => setSecableVoisinage((prev) => ({ ...prev, [id]: value }))}
+              onResetParametresAvances={() => {
+                setCleRenfort(defaultCleRenfort());
+                setVolumeRedistribuable(defaultVolumeRedistribuable());
+                setCleSecable(defaultCleSecable());
+                setSecableVoisinage(defaultSecableVoisinage());
+              }}
             />
           )}
 

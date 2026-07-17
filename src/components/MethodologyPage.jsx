@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Scale, GitBranch, ShieldCheck, Palette, Users } from 'lucide-react';
+import { Layers, Scale, GitBranch, ShieldCheck, Palette, Users, LifeBuoy } from 'lucide-react';
 
 const SECTIONS = [
   {
@@ -12,7 +12,13 @@ const SECTIONS = [
     icon: GitBranch,
     title: 'Hiérarchie à 3 niveaux',
     body:
-      "Établissement → Sites → Tournées. Un établissement regroupe plusieurs sites où les agents sont interchangeables (c'est le principe de consolidation). Chaque site regroupe des tournées, et chaque tournée correspond à un agent avec une capacité maximale.",
+      "Établissement → Sites → Tournées. Un établissement regroupe plusieurs sites où les agents sont interchangeables (c'est le principe de consolidation). Chaque site regroupe des tournées, et chaque tournée correspond à un agent avec sa propre capacité (elle varie d'un agent à l'autre, ce n'est plus une valeur unique pour tous).",
+  },
+  {
+    icon: LifeBuoy,
+    title: 'Renfort et tournée sécable',
+    body:
+      "Un renfort est un agent flottant, sans tournée fixe : une capacité de soutien mobilisable. Une tournée sécable peut être redécoupée : sa charge est répartie sur des tournées voisines plutôt que sur un seul agent. Décocher l'un ou l'autre sur un site simule sa suppression, et redistribue sa charge (EOR + objets) sur d'autres tournées du même site selon une clé de répartition — potentiellement au prix d'une nouvelle surcharge, pour rendre visible l'impact de cette suppression.",
   },
   {
     icon: ShieldCheck,
