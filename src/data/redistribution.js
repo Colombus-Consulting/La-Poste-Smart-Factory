@@ -35,22 +35,30 @@ function redistribute(source, recipients, weights) {
   source.objects = { ref: zeroObjects(), reel: zeroObjects() };
 }
 
-// Applique, pour un site donné, la redistribution renfort (si décoché : réparti sur toutes les
-// autres tournées du site) puis sécable (si décochée : réparti sur son voisinage, ou sur une
-// allocation manuelle si renseignée). Renfort et sécable ont une charge/capacité comme une
-// tournée normale ; seule leur case "actif" déclenche ce mécanisme. Retourne un site { tournees }
-// ajusté, prêt à être consommé partout ailleurs comme s'il s'agissait des données brutes.
+// Applique, pour un site donné, la redistribution de chaque renfort décoché (réparti sur toutes
+// les autres tournées du site) puis de chaque sécable décochée (répartie sur son voisinage, ou
+// sur une allocation manuelle si renseignée). Un site peut avoir 0, 1 ou plusieurs renforts/
+// sécables, chacun avec sa propre case "actif" et sa propre clé — renfort et sécable ont une
+// charge/capacité comme une tournée normale, seule leur case "actif" déclenche ce mécanisme.
+// Retourne un site { tournees } ajusté, prêt à être consommé partout ailleurs comme s'il
+// s'agissait des données brutes.
 export function applyRedistribution(site, options) {
   const { capacites, renfortActive, cleRenfort, secableActive, secableVoisinage, cleSecable, secableManual } = options;
 
   const tournees = site.tournees.map((t) => cloneTournee(t, capacites[t.id] ?? t.capaciteDefaut));
   const byId = Object.fromEntries(tournees.map((t) => [t.id, t]));
+  const capacitesById = Object.fromEntries(tournees.map((t) => [t.id, t.capacite]));
 
-  const renfort = tournees.find((t) => t.type === 'renfort');
-  if (renfort && renfortActive[site.id] === false) {
-    const recipients = tournees.filter((t) => t.id !== renfort.id);
-    const weights = resolveWeights(cleRenfort[site.id], recipients.map((t) => t.id));
-    redistribute(renfort, recipients, weights);
+  for (const renfort of tournees.filter((t) => t.type === 'renfort')) {
+    if (renfortActive[renfort.id] === false) {
+      const recipients = tournees.filter((t) => t.id !== renfort.id);
+      // Pas d'autre agent sur le site (cas extrême) : on laisse le renfort inchangé plutôt que
+      // de faire disparaître sa charge en la redistribuant vers personne.
+      if (recipients.length) {
+        const weights = resolveWeights(cleRenfort[renfort.id], recipients.map((t) => t.id), capacitesById);
+        redistribute(renfort, recipients, weights);
+      }
+    }
   }
 
   for (const secable of tournees.filter((t) => t.type === 'secable')) {
@@ -63,14 +71,19 @@ export function applyRedistribution(site, options) {
         ids = Object.keys(manual).filter((id) => byId[id] && Number(manual[id]) > 0);
         weights = resolveWeights(manual, ids);
       } else {
-        ids = (secableVoisinage[secable.id] || secable.voisinageDefaut || []).filter((id) => byId[id]);
-        weights = resolveWeights(cleSecable[secable.id], ids);
+        const voisinageIds = (secableVoisinage[secable.id] || secable.voisinageDefaut || []).filter((id) => byId[id]);
+        // Voisinage pas (encore) configuré (ex. sécable tout juste ajoutée) : on retombe sur tout
+        // le site plutôt que de perdre la charge en la redistribuant vers personne.
+        ids = voisinageIds.length ? voisinageIds : tournees.filter((t) => t.id !== secable.id).map((t) => t.id);
+        weights = resolveWeights(cleSecable[secable.id], ids, capacitesById);
       }
-      redistribute(
-        secable,
-        ids.map((id) => byId[id]),
-        weights
-      );
+      if (ids.length) {
+        redistribute(
+          secable,
+          ids.map((id) => byId[id]),
+          weights
+        );
+      }
     }
   }
 

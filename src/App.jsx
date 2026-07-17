@@ -22,6 +22,8 @@ import {
   defaultSecableActive,
   defaultSecableVoisinage,
   defaultCleSecable,
+  cloneSitesConfig,
+  createAgentEntry,
   computeEor,
   CAPACITE_REF,
 } from './data/mockData';
@@ -56,7 +58,10 @@ function computeKpis(sites, coefficients) {
 }
 
 export default function App() {
-  const dataByHorizon = useMemo(() => generateMockData(), []);
+  // Effectif par site (ajout/suppression d'agents depuis Paramètres) : les données se
+  // régénèrent dès que l'effectif change, exactement comme pour les autres paramètres.
+  const [sitesConfig, setSitesConfig] = useState(() => cloneSitesConfig());
+  const dataByHorizon = useMemo(() => generateMockData(sitesConfig), [sitesConfig]);
 
   const [view, setView] = useState('global');
   const [horizon, setHorizon] = useState('J+1');
@@ -142,8 +147,8 @@ export default function App() {
     setSuggestionStatuses((prev) => ({ ...prev, [statusKey]: 'rejeté' }));
   }
 
-  function handleToggleRenfort(siteId, active) {
-    setRenfortActive((prev) => ({ ...prev, [siteId]: active }));
+  function handleToggleRenfort(agentId, active) {
+    setRenfortActive((prev) => ({ ...prev, [agentId]: active }));
   }
 
   function handleToggleSecable(tourneeId, active) {
@@ -155,6 +160,66 @@ export default function App() {
       ...prev,
       [tourneeId]: { ...prev[tourneeId], [recipientId]: value },
     }));
+  }
+
+  // Un site peut passer à toute la France : l'effectif n'est plus figé, on peut ajouter ou
+  // retirer un agent (normal/renfort/sécable) à tout moment, sans jamais sauter de numéro.
+  function handleAddAgent(configKey, type) {
+    const entry = createAgentEntry(sitesConfig[configKey], type);
+    setSitesConfig((prev) => ({ ...prev, [configKey]: [...prev[configKey], entry] }));
+    setCapacites((prev) => ({ ...prev, [entry.id]: entry.capacite }));
+    if (type === 'renfort') {
+      setRenfortActive((prev) => ({ ...prev, [entry.id]: true }));
+      setCleRenfort((prev) => ({ ...prev, [entry.id]: 'uniforme' }));
+    } else if (type === 'secable') {
+      setSecableActive((prev) => ({ ...prev, [entry.id]: true }));
+      setSecableVoisinage((prev) => ({ ...prev, [entry.id]: [] }));
+      setCleSecable((prev) => ({ ...prev, [entry.id]: 'uniforme' }));
+    }
+  }
+
+  function handleRemoveAgent(configKey, agentId) {
+    setSitesConfig((prev) => ({ ...prev, [configKey]: prev[configKey].filter((e) => e.id !== agentId) }));
+    const dropKey = (setter) =>
+      setter((prev) => {
+        if (!(agentId in prev)) return prev;
+        const next = { ...prev };
+        delete next[agentId];
+        return next;
+      });
+    dropKey(setCapacites);
+    dropKey(setRenfortActive);
+    dropKey(setCleRenfort);
+    dropKey(setSecableActive);
+    dropKey(setCleSecable);
+    setSecableVoisinage((prev) => {
+      const next = { ...prev };
+      delete next[agentId];
+      for (const key of Object.keys(next)) next[key] = next[key].filter((id) => id !== agentId);
+      return next;
+    });
+    setSecableManual((prev) => {
+      const next = { ...prev };
+      delete next[agentId];
+      for (const key of Object.keys(next)) {
+        if (agentId in next[key]) {
+          const { [agentId]: _removed, ...rest } = next[key];
+          next[key] = rest;
+        }
+      }
+      return next;
+    });
+  }
+
+  function handleResetRoster() {
+    setSitesConfig(cloneSitesConfig());
+    setCapacites(defaultCapacites());
+    setRenfortActive(defaultRenfortActive());
+    setCleRenfort(defaultCleRenfort());
+    setSecableActive(defaultSecableActive());
+    setSecableVoisinage(defaultSecableVoisinage());
+    setCleSecable(defaultCleSecable());
+    setSecableManual({});
   }
 
   const showMultiSiteSummary = view === 'global' && isAdmin && !siteFilter;
@@ -273,6 +338,10 @@ export default function App() {
 
           {view === 'parametres' && (
             <ParametresPage
+              sitesConfig={sitesConfig}
+              onAddAgent={handleAddAgent}
+              onRemoveAgent={handleRemoveAgent}
+              onResetRoster={handleResetRoster}
               coefficients={coefficients}
               onCoefficientChange={handleCoefficientChange}
               onResetCoefficients={() => setCoefficients(defaultCoefficients())}
@@ -280,7 +349,7 @@ export default function App() {
               onCapaciteChange={(id, value) => setCapacites((prev) => ({ ...prev, [id]: value }))}
               onResetCapacites={() => setCapacites(defaultCapacites())}
               cleRenfort={cleRenfort}
-              onCleRenfortChange={(siteId, value) => setCleRenfort((prev) => ({ ...prev, [siteId]: value }))}
+              onCleRenfortChange={(agentId, value) => setCleRenfort((prev) => ({ ...prev, [agentId]: value }))}
               cleSecable={cleSecable}
               onCleSecableChange={(id, value) => setCleSecable((prev) => ({ ...prev, [id]: value }))}
               secableVoisinage={secableVoisinage}

@@ -137,11 +137,8 @@ export default function SitesTable({
                         const isSecable = t.type === 'secable';
                         const isRenfort = t.type === 'renfort';
                         const isSpecial = isSecable || isRenfort;
-                        const specialOn = isSecable
-                          ? secableActive[t.id] !== false
-                          : isRenfort
-                            ? renfortActive[site.id] !== false
-                            : true;
+                        const activeMap = isRenfort ? renfortActive : secableActive;
+                        const specialOn = isSpecial ? activeMap[t.id] !== false : true;
                         const specialColor = isRenfort ? 'text-blue-700' : 'text-purple-700';
 
                         return (
@@ -162,7 +159,7 @@ export default function SitesTable({
                                       type="checkbox"
                                       checked={specialOn}
                                       onChange={(e) =>
-                                        isRenfort ? onToggleRenfort(site.id, e.target.checked) : onToggleSecable(t.id, e.target.checked)
+                                        (isRenfort ? onToggleRenfort : onToggleSecable)(t.id, e.target.checked)
                                       }
                                     />
                                     Actif

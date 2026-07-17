@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
-import { RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
-import { SITES, SITES_CONFIG } from '../data/mockData';
+import { RotateCcw, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { SITES } from '../data/mockData';
 import InfoTip from './InfoTip';
 import EorMatrixPage from './EorMatrixPage';
 
 function CleEditor({ ids, cle, onChange }) {
   const isCustom = cle && typeof cle === 'object';
+  const mode = isCustom ? 'custom' : cle === 'proportionnel' ? 'proportionnel' : 'uniforme';
   return (
     <div>
       <select
-        value={isCustom ? 'custom' : 'uniforme'}
+        value={mode}
         onChange={(e) => {
-          if (e.target.value === 'uniforme') onChange('uniforme');
-          else onChange(Object.fromEntries(ids.map((id) => [id, Math.round(100 / (ids.length || 1))])));
+          if (e.target.value === 'custom') onChange(Object.fromEntries(ids.map((id) => [id, Math.round(100 / (ids.length || 1))])));
+          else onChange(e.target.value);
         }}
         className="mb-2 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
       >
         <option value="uniforme">Uniforme</option>
+        <option value="proportionnel">Proportionnelle à la capacité</option>
         <option value="custom">Personnalisée (%)</option>
       </select>
       {isCustom && (
@@ -69,7 +71,35 @@ function VoisinageEditor({ allIds, excludeId, voisinage, onChange }) {
   );
 }
 
+function AddAgentControl({ onAdd }) {
+  const [type, setType] = useState('normale');
+  return (
+    <div className="flex items-center gap-2 border-t border-slate-100 p-3">
+      <select
+        value={type}
+        onChange={(e) => setType(e.target.value)}
+        className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
+      >
+        <option value="normale">Normale</option>
+        <option value="renfort">Renfort</option>
+        <option value="secable">Sécable</option>
+      </select>
+      <button
+        onClick={() => onAdd(type)}
+        className="flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-700"
+      >
+        <Plus size={13} />
+        Ajouter un agent
+      </button>
+    </div>
+  );
+}
+
 export default function ParametresPage({
+  sitesConfig,
+  onAddAgent,
+  onRemoveAgent,
+  onResetRoster,
   coefficients,
   onCoefficientChange,
   onResetCoefficients,
@@ -100,15 +130,15 @@ export default function ParametresPage({
 
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-1 flex items-center gap-1.5">
-          <h2 className="text-base font-semibold text-slate-900">Matrice RH — capacité par agent</h2>
-          <InfoTip text="Chaque agent a sa propre capacité EOR quotidienne, au lieu d'une capacité uniforme. Le taux d'utilisation d'une tournée se calcule contre la capacité de son agent." />
+          <h2 className="text-base font-semibold text-slate-900">Matrice RH — effectif &amp; capacité par agent</h2>
+          <InfoTip text="Chaque agent a sa propre capacité EOR quotidienne, au lieu d'une capacité uniforme. L'effectif n'est pas figé : ajoutez ou retirez un agent (normal, renfort ou sécable) à tout moment, par exemple pour étendre un site." />
         </div>
         <p className="mb-4 text-sm text-slate-500">
           Montfort : valeurs réelles (53 semaines 2025). Guichen / Messac : calibrées, à remplacer.
         </p>
         <div className="space-y-2">
           {SITES.map((site) => {
-            const entries = SITES_CONFIG[site.configKey];
+            const entries = sitesConfig[site.configKey];
             const isOpen = openSite[site.id];
             return (
               <div key={site.id} className="rounded-lg border border-slate-100">
@@ -121,55 +151,84 @@ export default function ParametresPage({
                   <span className="text-xs font-normal text-slate-400">{entries.length} agents</span>
                 </button>
                 {isOpen && (
-                  <div className="grid grid-cols-2 gap-2 border-t border-slate-100 p-3 sm:grid-cols-3">
-                    {entries.map((entry) => (
-                      <label key={entry.id} className="flex items-center justify-between gap-2 text-xs text-slate-600">
-                        <span>
-                          {entry.id}
-                          {entry.type !== 'normale' && <span className="ml-1 text-[10px] text-slate-400">({entry.type})</span>}
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          value={capacites[entry.id] ?? entry.capacite}
-                          onChange={(e) => onCapaciteChange(entry.id, Math.max(0, Number(e.target.value)))}
-                          className="w-20 rounded border border-slate-200 px-1.5 py-0.5 text-right"
-                        />
-                      </label>
-                    ))}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-1 gap-2 border-t border-slate-100 p-3 sm:grid-cols-2">
+                      {entries.map((entry) => (
+                        <div key={entry.id} className="flex items-center justify-between gap-2 text-xs text-slate-600">
+                          <span>
+                            {entry.id}
+                            {entry.type !== 'normale' && <span className="ml-1 text-[10px] text-slate-400">({entry.type})</span>}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min="0"
+                              value={capacites[entry.id] ?? entry.capacite}
+                              onChange={(e) => onCapaciteChange(entry.id, Math.max(0, Number(e.target.value)))}
+                              className="w-20 rounded border border-slate-200 px-1.5 py-0.5 text-right"
+                            />
+                            <button
+                              onClick={() => onRemoveAgent(site.configKey, entry.id)}
+                              disabled={entries.length <= 1}
+                              title="Retirer cet agent"
+                              className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <AddAgentControl onAdd={(type) => onAddAgent(site.configKey, type)} />
+                  </>
                 )}
               </div>
             );
           })}
         </div>
-        <button
-          onClick={onResetCapacites}
-          className="mt-4 flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-        >
-          <RotateCcw size={13} />
-          Réinitialiser les capacités par défaut
-        </button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            onClick={onResetCapacites}
+            className="flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+          >
+            <RotateCcw size={13} />
+            Réinitialiser les capacités par défaut
+          </button>
+          <button
+            onClick={onResetRoster}
+            className="flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+          >
+            <RotateCcw size={13} />
+            Réinitialiser l'effectif par défaut
+          </button>
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-1 flex items-center gap-1.5">
           <h2 className="text-base font-semibold text-slate-900">Clé de répartition — Renfort</h2>
-          <InfoTip text="Le renfort a sa propre capacité et charge, comme une tournée normale (éditable dans la Matrice RH ci-dessus). Quand la case « Actif » est décochée sur le site, sa charge est répartie sur toutes les autres tournées selon cette clé." />
+          <InfoTip text="Le renfort a sa propre capacité et charge, comme une tournée normale (éditable dans la Matrice RH ci-dessus). Quand sa case « Actif » est décochée, sa charge est répartie sur toutes les autres tournées du site selon cette clé. Un site peut avoir 0, 1 ou plusieurs renforts." />
         </div>
         <div className="space-y-4">
-          {SITES.map((site) => {
-            const entries = SITES_CONFIG[site.configKey];
-            const renfortEntry = entries.find((e) => e.type === 'renfort');
-            if (!renfortEntry) return null;
-            const otherIds = entries.filter((e) => e.type !== 'renfort').map((e) => e.id);
-            return (
-              <div key={site.id} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
-                <div className="mb-2 text-sm font-medium text-slate-700">{site.name}</div>
-                <CleEditor ids={otherIds} cle={cleRenfort[site.id]} onChange={(v) => onCleRenfortChange(site.id, v)} />
-              </div>
-            );
+          {SITES.flatMap((site) => {
+            const entries = sitesConfig[site.configKey];
+            return entries
+              .filter((e) => e.type === 'renfort')
+              .map((renfort) => {
+                const otherIds = entries.filter((e) => e.id !== renfort.id).map((e) => e.id);
+                return (
+                  <div key={renfort.id} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
+                    <div className="mb-2 text-sm font-medium text-slate-700">
+                      {site.name} — {renfort.id}
+                    </div>
+                    <CleEditor ids={otherIds} cle={cleRenfort[renfort.id]} onChange={(v) => onCleRenfortChange(renfort.id, v)} />
+                  </div>
+                );
+              });
           })}
+          {SITES.every((site) => !sitesConfig[site.configKey].some((e) => e.type === 'renfort')) && (
+            <p className="text-sm text-slate-400">Aucun agent renfort pour l'instant — ajoutez-en un depuis la Matrice RH.</p>
+          )}
         </div>
       </div>
 
@@ -180,12 +239,12 @@ export default function ParametresPage({
         </div>
         <div className="space-y-4">
           {SITES.flatMap((site) => {
-            const entries = SITES_CONFIG[site.configKey];
+            const entries = sitesConfig[site.configKey];
             const allIds = entries.map((e) => e.id);
             return entries
               .filter((e) => e.type === 'secable')
               .map((secable) => {
-                const voisinage = secableVoisinage[secable.id] || secable.voisinage;
+                const voisinage = secableVoisinage[secable.id] || secable.voisinage || [];
                 return (
                   <div key={secable.id} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
                     <div className="mb-2 text-sm font-medium text-slate-700">
@@ -206,6 +265,9 @@ export default function ParametresPage({
                 );
               });
           })}
+          {SITES.every((site) => !sitesConfig[site.configKey].some((e) => e.type === 'secable')) && (
+            <p className="text-sm text-slate-400">Aucune tournée sécable pour l'instant — ajoutez-en une depuis la Matrice RH.</p>
+          )}
         </div>
         <button
           onClick={onResetParametresAvances}

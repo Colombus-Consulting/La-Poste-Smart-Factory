@@ -223,7 +223,9 @@ export function computeEor(objects, coefficients) {
   return OBJECT_TYPES.reduce((sum, type) => sum + (objects[type.key] || 0) * coefficients[type.key], 0);
 }
 
-export function generateMockData() {
+// sitesConfig : { [configKey]: entry[] } — par défaut SITES_CONFIG, mais l'appelant peut passer
+// un effectif courant (après ajout/suppression d'agents depuis l'onglet Paramètres).
+export function generateMockData(sitesConfig = SITES_CONFIG) {
   const today = new Date();
   const dataByHorizon = {};
 
@@ -238,7 +240,7 @@ export function generateMockData() {
     // Renfort et sécable restent dans site.tournees comme les tournées normales (charge, capacité,
     // statut calculés pareil) ; seule leur case "actif" déclenche la redistribution.
     const sites = SITES.map((site) => {
-      const entries = SITES_CONFIG[site.configKey];
+      const entries = sitesConfig[site.configKey];
       const tournees = entries.map((entry) => buildAgentTournee(site, entry, horizon, date));
       return { id: site.id, name: site.name, date, saturday, tournees };
     });
@@ -247,6 +249,65 @@ export function generateMockData() {
   }
 
   return dataByHorizon;
+}
+
+// --- Effectif dynamique (onglet Paramètres : ajouter/supprimer un agent) --------------------
+
+export function cloneSitesConfig(sitesConfig = SITES_CONFIG) {
+  return Object.fromEntries(
+    Object.entries(sitesConfig).map(([key, entries]) => [
+      key,
+      entries.map((e) => ({ ...e, charge: e.charge ? { ...e.charge } : null, voisinage: e.voisinage ? [...e.voisinage] : undefined })),
+    ])
+  );
+}
+
+// Prochain identifiant séquentiel pour un site (ex. T18 -> T19, GCH-08 -> GCH-09) : jamais de
+// trou, même après des suppressions (se base sur le plus grand numéro existant).
+function nextAgentId(entries) {
+  if (!entries.length) return '1';
+  const first = entries[0].id.match(/^(.*?)(\d+)$/);
+  const prefix = first ? first[1] : '';
+  const width = first ? first[2].length : 1;
+  const maxNum = entries.reduce((max, e) => {
+    const m = e.id.match(/(\d+)$/);
+    return m ? Math.max(max, parseInt(m[1], 10)) : max;
+  }, 0);
+  return `${prefix}${String(maxNum + 1).padStart(width, '0')}`;
+}
+
+// Profil statistique moyen des tournées "normale" existantes d'un site — sert de point de départ
+// raisonnable pour un agent nouvellement ajouté (sa capacité reste ensuite éditable comme les autres).
+function averageProfile(entries) {
+  const source = entries.filter((e) => e.type === 'normale' && e.charge);
+  const pool = source.length ? source : entries.filter((e) => e.charge);
+  if (!pool.length) {
+    return { capacite: 700, charge: { moyenne: 700, ecartType: 300, min: 200, max: 1600 } };
+  }
+  const avg = (pick) => pool.reduce((s, e) => s + pick(e), 0) / pool.length;
+  return {
+    capacite: Math.round(avg((e) => e.capacite) * 10) / 10,
+    charge: {
+      moyenne: Math.round(avg((e) => e.charge.moyenne) * 10) / 10,
+      ecartType: Math.round(avg((e) => e.charge.ecartType) * 10) / 10,
+      min: Math.round(avg((e) => e.charge.min) * 10) / 10,
+      max: Math.round(avg((e) => e.charge.max) * 10) / 10,
+    },
+  };
+}
+
+// Construit un nouvel agent (id auto, profil dérivé de la moyenne du site) prêt à être ajouté à
+// SITES_CONFIG[configKey]. La capacité reste éditable ensuite comme pour n'importe quel agent.
+export function createAgentEntry(entries, type) {
+  const id = nextAgentId(entries);
+  const profile = averageProfile(entries);
+  return {
+    id,
+    type,
+    capacite: profile.capacite,
+    charge: { ...profile.charge },
+    ...(type === 'secable' ? { voisinage: [] } : {}),
+  };
 }
 
 export function defaultCoefficients() {
@@ -278,18 +339,27 @@ export function defaultSecableVoisinage() {
   return voisinages;
 }
 
+// Renfort et sécable partagent le même modèle : un site peut en avoir 0, 1 ou plusieurs, chacun
+// avec sa propre case "actif" et sa propre clé de répartition (agent -> toutes les autres
+// tournées du site, au lieu d'un voisinage pour la sécable).
 export function defaultCleRenfort() {
-  return SITES.reduce((acc, s) => {
-    acc[s.id] = 'uniforme';
-    return acc;
-  }, {});
+  const cles = {};
+  for (const site of SITES) {
+    for (const entry of SITES_CONFIG[site.configKey]) {
+      if (entry.type === 'renfort') cles[entry.id] = 'uniforme';
+    }
+  }
+  return cles;
 }
 
 export function defaultRenfortActive() {
-  return SITES.reduce((acc, s) => {
-    acc[s.id] = true;
-    return acc;
-  }, {});
+  const active = {};
+  for (const site of SITES) {
+    for (const entry of SITES_CONFIG[site.configKey]) {
+      if (entry.type === 'renfort') active[entry.id] = true;
+    }
+  }
+  return active;
 }
 
 export function defaultSecableActive() {
@@ -312,10 +382,18 @@ export function defaultCleSecable() {
   return cles;
 }
 
-// Résout une clé de répartition ('uniforme' ou une table de poids personnalisée, pas forcément
-// normalisée à 100%) en fractions (somme = 1) pour une liste d'identifiants donnée.
-export function resolveWeights(cle, ids) {
+// Résout une clé de répartition en fractions (somme = 1) pour une liste d'identifiants donnée.
+// 'uniforme' : parts égales. 'proportionnel' : au prorata de la capacité de chacun (aucune saisie
+// requise, reste intuitif même avec beaucoup d'agents). Sinon, une table de poids personnalisée
+// (pas forcément normalisée à 100%) — ex. { T2: 30, T3: 70 }.
+export function resolveWeights(cle, ids, capacitesById) {
   if (!ids.length) return {};
+
+  if (cle === 'proportionnel' && capacitesById) {
+    const total = ids.reduce((s, id) => s + (Number(capacitesById[id]) || 0), 0);
+    if (total > 0) return Object.fromEntries(ids.map((id) => [id, (Number(capacitesById[id]) || 0) / total]));
+  }
+
   const isCustom = cle && typeof cle === 'object';
   const total = isCustom ? ids.reduce((s, id) => s + (Number(cle[id]) || 0), 0) : 0;
   if (!isCustom || !total) {
