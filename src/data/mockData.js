@@ -36,7 +36,7 @@ export const SITES = [
 // elles sont éditables depuis l'onglet Paramètres.
 export const SITES_CONFIG = {
   Montfort: [
-    { id: 'T1', type: 'renfort', capacite: 0, charge: null, volumeRedistribuable: 209 },
+    { id: 'T1', type: 'renfort', capacite: 203.1, charge: { moyenne: 209.3, ecartType: 54.1, min: 100.1, max: 306.3 } },
     { id: 'T2', type: 'normale', capacite: 585.0, charge: { moyenne: 544.2, ecartType: 236.6, min: 171.8, max: 1199.3 } },
     { id: 'T3', type: 'normale', capacite: 770.4, charge: { moyenne: 796.8, ecartType: 355.1, min: 245.2, max: 1794.2 } },
     { id: 'T4', type: 'normale', capacite: 962.4, charge: { moyenne: 995.0, ecartType: 474.3, min: 262.9, max: 2340.9 } },
@@ -58,7 +58,7 @@ export const SITES_CONFIG = {
     { id: 'T18', type: 'normale', capacite: 726.7, charge: { moyenne: 682.8, ecartType: 307.8, min: 200.3, max: 1541.7 } },
   ],
   Guichen: [
-    { id: 'GCH-01', type: 'renfort', capacite: 0, charge: null, volumeRedistribuable: 191 },
+    { id: 'GCH-01', type: 'renfort', capacite: 268.3, charge: { moyenne: 190.6, ecartType: 85.8, min: 57.2, max: 438.4 } },
     { id: 'GCH-02', type: 'normale', capacite: 831.3, charge: { moyenne: 572.6, ecartType: 257.7, min: 171.8, max: 1317.0 } },
     { id: 'GCH-03', type: 'normale', capacite: 994.9, charge: { moyenne: 798.2, ecartType: 359.2, min: 239.5, max: 1835.9 } },
     { id: 'GCH-04', type: 'normale', capacite: 1179.7, charge: { moyenne: 911.4, ecartType: 410.1, min: 273.4, max: 2096.2 } },
@@ -80,7 +80,7 @@ export const SITES_CONFIG = {
     { id: 'GCH-18', type: 'normale', capacite: 926.7, charge: { moyenne: 684.7, ecartType: 308.1, min: 205.4, max: 1574.8 } },
   ],
   Messac: [
-    { id: 'MSC-01', type: 'renfort', capacite: 0, charge: null, volumeRedistribuable: 220 },
+    { id: 'MSC-01', type: 'renfort', capacite: 192.4, charge: { moyenne: 219.7, ecartType: 98.9, min: 65.9, max: 505.3 } },
     { id: 'MSC-02', type: 'normale', capacite: 517.0, charge: { moyenne: 521.6, ecartType: 234.7, min: 156.5, max: 1199.7 } },
     { id: 'MSC-03', type: 'normale', capacite: 717.9, charge: { moyenne: 889.0, ecartType: 400.0, min: 266.7, max: 2044.7 } },
     { id: 'MSC-04', type: 'normale', capacite: 853.6, charge: { moyenne: 1086.1, ecartType: 488.7, min: 325.8, max: 2498.0 } },
@@ -191,22 +191,8 @@ function buildAgentTournee(site, entry, horizon, date) {
   const name = `${site.name} — Tournée ${id}`;
   const weights = weightsForDay(date.getDay());
 
-  if (entry.type === 'renfort') {
-    // Pas de tirage propre (agent flottant, sans tournée fixe) : composition fixe du volume
-    // de soutien qu'il est susceptible d'absorber, stable quel que soit l'horizon.
-    const rng = rngFromSeed(`${id}|renfort`);
-    const objects = decomposeIntoObjects(entry.volumeRedistribuable, weights, rng);
-    return {
-      id,
-      name,
-      siteId: site.id,
-      type: 'renfort',
-      capaciteDefaut: 0,
-      volumeRedistribuableDefaut: entry.volumeRedistribuable,
-      objects: { ref: objects, reel: objects },
-    };
-  }
-
+  // Le renfort a une tournée (charge + capacité) comme les autres : seule sa case "actif" change
+  // ce qui se passe ensuite (voir redistribution.js). Ce n'est pas un agent à capacité nulle.
   // "Référence" = paramètre statistique stable (même tirage quel que soit l'horizon) ; seul le
   // "Réel" diverge par horizon, selon la fiabilité (mécanisme inchangé).
   const { moyenne, ecartType, min, max } = entry.charge;
@@ -249,14 +235,12 @@ export function generateMockData() {
 
     // Chaque site garde l'intégralité de ses agents, sans trou de numérotation, quel que soit le
     // jour : le voisinage d'une tournée sécable doit toujours pouvoir trouver ses receveurs.
+    // Renfort et sécable restent dans site.tournees comme les tournées normales (charge, capacité,
+    // statut calculés pareil) ; seule leur case "actif" déclenche la redistribution.
     const sites = SITES.map((site) => {
       const entries = SITES_CONFIG[site.configKey];
-      const built = entries.map((entry) => buildAgentTournee(site, entry, horizon, date));
-      // Le renfort n'est jamais un agent "normal" comptabilisé dans les totaux/statuts : il est
-      // exposé à part (site.renfort), les tournées normales/sécables restent dans site.tournees.
-      const renfort = built.find((t) => t.type === 'renfort') || null;
-      const tournees = built.filter((t) => t.type !== 'renfort');
-      return { id: site.id, name: site.name, date, saturday, tournees, renfort };
+      const tournees = entries.map((entry) => buildAgentTournee(site, entry, horizon, date));
+      return { id: site.id, name: site.name, date, saturday, tournees };
     });
 
     dataByHorizon[horizon.key] = { date, saturday, sites };
@@ -282,16 +266,6 @@ export function defaultCapacites() {
     }
   }
   return capacites;
-}
-
-export function defaultVolumeRedistribuable() {
-  const volumes = {};
-  for (const site of SITES) {
-    for (const entry of SITES_CONFIG[site.configKey]) {
-      if (entry.type === 'renfort') volumes[entry.id] = entry.volumeRedistribuable;
-    }
-  }
-  return volumes;
 }
 
 export function defaultSecableVoisinage() {

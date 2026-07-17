@@ -37,43 +37,22 @@ function redistribute(source, recipients, weights) {
 
 // Applique, pour un site donné, la redistribution renfort (si décoché : réparti sur toutes les
 // autres tournées du site) puis sécable (si décochée : réparti sur son voisinage, ou sur une
-// allocation manuelle si renseignée). Retourne un site { tournees, renfort } ajusté, prêt à être
-// consommé partout ailleurs comme s'il s'agissait des données brutes.
+// allocation manuelle si renseignée). Renfort et sécable ont une charge/capacité comme une
+// tournée normale ; seule leur case "actif" déclenche ce mécanisme. Retourne un site { tournees }
+// ajusté, prêt à être consommé partout ailleurs comme s'il s'agissait des données brutes.
 export function applyRedistribution(site, options) {
-  const {
-    capacites,
-    renfortActive,
-    cleRenfort,
-    secableActive,
-    secableVoisinage,
-    cleSecable,
-    secableManual,
-    volumeRedistribuable,
-  } = options;
+  const { capacites, renfortActive, cleRenfort, secableActive, secableVoisinage, cleSecable, secableManual } = options;
 
   const tournees = site.tournees.map((t) => cloneTournee(t, capacites[t.id] ?? t.capaciteDefaut));
-  let renfort = site.renfort ? cloneTournee(site.renfort, 0) : null;
-
-  if (renfort) {
-    const liveVolume = volumeRedistribuable?.[renfort.id] ?? renfort.volumeRedistribuableDefaut;
-    if (liveVolume !== renfort.volumeRedistribuableDefaut && renfort.volumeRedistribuableDefaut > 0) {
-      const scale = liveVolume / renfort.volumeRedistribuableDefaut;
-      const scaledRef = {};
-      const scaledReel = {};
-      for (const type of OBJECT_TYPES) {
-        scaledRef[type.key] = Math.round(renfort.objects.ref[type.key] * scale);
-        scaledReel[type.key] = Math.round(renfort.objects.reel[type.key] * scale);
-      }
-      renfort = { ...renfort, objects: { ref: scaledRef, reel: scaledReel } };
-    }
-  }
-
-  if (renfort && renfortActive[site.id] === false) {
-    const weights = resolveWeights(cleRenfort[site.id], tournees.map((t) => t.id));
-    redistribute(renfort, tournees, weights);
-  }
-
   const byId = Object.fromEntries(tournees.map((t) => [t.id, t]));
+
+  const renfort = tournees.find((t) => t.type === 'renfort');
+  if (renfort && renfortActive[site.id] === false) {
+    const recipients = tournees.filter((t) => t.id !== renfort.id);
+    const weights = resolveWeights(cleRenfort[site.id], recipients.map((t) => t.id));
+    redistribute(renfort, recipients, weights);
+  }
+
   for (const secable of tournees.filter((t) => t.type === 'secable')) {
     if (secableActive[secable.id] === false) {
       const manual = secableManual[secable.id];
@@ -95,5 +74,5 @@ export function applyRedistribution(site, options) {
     }
   }
 
-  return { tournees, renfort };
+  return { tournees };
 }

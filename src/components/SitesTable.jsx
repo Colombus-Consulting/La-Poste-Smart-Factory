@@ -95,7 +95,6 @@ export default function SitesTable({
           const totalCapacite = site.tournees.reduce((s, t) => s + t.capacite, 0);
           const ratioSite = totalCapacite ? totalCharge / totalCapacite : 0;
           const isCollapsed = collapsed[site.id];
-          const renfortActif = site.renfort ? renfortActive[site.id] !== false : false;
 
           return (
             <div key={site.id} className="border-b border-slate-100 last:border-b-0">
@@ -132,61 +131,18 @@ export default function SitesTable({
                     </tr>
                   </thead>
                   <tbody>
-                    {site.renfort && (
-                      <tr
-                        onClick={() => onSelectTournee(site.renfort.id)}
-                        className="cursor-pointer border-t border-slate-50 bg-blue-50/40 hover:bg-blue-50"
-                      >
-                        <td className="px-5 py-2 font-medium text-slate-700">
-                          {site.renfort.name}
-                          <TypeBadge type="renfort" />
-                          <label
-                            className="ml-2 inline-flex items-center gap-1 text-[10px] font-normal text-blue-700"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={renfortActif}
-                              onChange={(e) => onToggleRenfort(site.id, e.target.checked)}
-                            />
-                            Actif
-                          </label>
-                          <InfoTip text="Un renfort est un agent flottant, sans tournée fixe : il représente une capacité de soutien mobilisable, pas comptée dans les totaux du site. Décochez pour simuler sa suppression : sa charge est alors redistribuée sur toutes les autres tournées du site." />
-                        </td>
-                        <td className="px-5 py-2 text-slate-600">
-                          {renfortActif ? (
-                            Math.round(computeEor(site.renfort.objects.reel, coefficients)).toLocaleString('fr-FR')
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-2 text-slate-400">sans capacité fixe</td>
-                        <td className="px-5 py-2">
-                          {renfortActif ? (
-                            <span className="text-xs text-slate-400">agent flottant</span>
-                          ) : (
-                            <span className="text-xs text-slate-400">redistribué</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-2">
-                          {renfortActif ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
-                              Disponible
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700">
-                              Redistribué
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-2 text-right text-slate-400">—</td>
-                      </tr>
-                    )}
                     {metrics.map(({ t, m }) => {
                         const ecart = Math.round(m.chargeEor - t.capacite);
                         const incrementEor = t.incrementObjects ? Math.round(computeEor(t.incrementObjects, coefficients)) : 0;
                         const isSecable = t.type === 'secable';
-                        const secableOn = isSecable ? secableActive[t.id] !== false : true;
+                        const isRenfort = t.type === 'renfort';
+                        const isSpecial = isSecable || isRenfort;
+                        const specialOn = isSecable
+                          ? secableActive[t.id] !== false
+                          : isRenfort
+                            ? renfortActive[site.id] !== false
+                            : true;
+                        const specialColor = isRenfort ? 'text-blue-700' : 'text-purple-700';
 
                         return (
                           <React.Fragment key={t.id}>
@@ -197,15 +153,17 @@ export default function SitesTable({
                               <td className="px-5 py-2 font-medium text-slate-700">
                                 {t.name}
                                 <TypeBadge type={t.type} />
-                                {isSecable && (
+                                {isSpecial && (
                                   <label
-                                    className="ml-2 inline-flex items-center gap-1 text-[10px] font-normal text-purple-700"
+                                    className={`ml-2 inline-flex items-center gap-1 text-[10px] font-normal ${specialColor}`}
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <input
                                       type="checkbox"
-                                      checked={secableOn}
-                                      onChange={(e) => onToggleSecable(t.id, e.target.checked)}
+                                      checked={specialOn}
+                                      onChange={(e) =>
+                                        isRenfort ? onToggleRenfort(site.id, e.target.checked) : onToggleSecable(t.id, e.target.checked)
+                                      }
                                     />
                                     Actif
                                   </label>
@@ -253,7 +211,7 @@ export default function SitesTable({
                                 {t.released ? '—' : `${ecart > 0 ? '+' : ''}${ecart.toLocaleString('fr-FR')}`}
                               </td>
                             </tr>
-                            {isSecable && !secableOn && (
+                            {isSecable && !specialOn && (
                               <tr>
                                 <td colSpan={6} className="px-5 pb-2">
                                   <button

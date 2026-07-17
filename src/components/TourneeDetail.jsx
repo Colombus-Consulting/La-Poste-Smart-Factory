@@ -9,7 +9,7 @@ export default function TourneeDetail({ tournee, site, coefficients, onClose }) 
 
   const isRenfort = tournee.type === 'renfort';
   const eorReel = computeEor(tournee.objects.reel, coefficients);
-  const ratioReel = isRenfort ? 0 : eorReel / tournee.capacite;
+  const ratioReel = eorReel / tournee.capacite;
   const status = ratioReel > 1 ? 'surcharge' : ratioReel < 0.85 ? 'sous-charge' : 'optimal';
   const displayObjects = tournee.released && tournee.objectsAvantRedistribution ? tournee.objectsAvantRedistribution : tournee.objects.reel;
   const displayEor = computeEor(displayObjects, coefficients);
@@ -25,11 +25,7 @@ export default function TourneeDetail({ tournee, site, coefficients, onClose }) 
             <div className="text-xs uppercase tracking-wide text-slate-400">{site?.name}</div>
             <h3 className="text-lg font-semibold text-slate-900">{tournee.name}</h3>
             <div className="mt-1">
-              {isRenfort ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
-                  Renfort
-                </span>
-              ) : tournee.released ? (
+              {tournee.released ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700">
                   Redistribuée
                 </span>
@@ -43,13 +39,13 @@ export default function TourneeDetail({ tournee, site, coefficients, onClose }) 
           </button>
         </div>
 
-        {isRenfort && (
+        {isRenfort && !tournee.released && (
           <p className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-700">
-            Agent flottant, sans tournée fixe : représente une capacité de soutien mobilisable, pas un agent
-            comptabilisé dans les totaux de charge/capacité du site.
+            Agent renfort : mobilisable pour absorber de la charge en plus de sa tournée habituelle. Sa capacité et
+            sa charge comptent normalement tant que la case « Actif » est cochée.
           </p>
         )}
-        {!isRenfort && tournee.released && (
+        {tournee.released && (
           <p className="mb-4 rounded-md bg-purple-50 px-3 py-2 text-xs text-purple-700">
             Cette tournée a été désactivée : sa charge a été redistribuée sur d'autres tournées du site. Le détail
             ci-dessous montre la composition qui a été redistribuée, à titre indicatif.
@@ -95,9 +91,7 @@ export default function TourneeDetail({ tournee, site, coefficients, onClose }) 
           </table>
         </div>
 
-        {!isRenfort && (
-          <div className="mt-4 text-xs text-slate-400">Capacité de référence de la tournée : {Math.round(tournee.capacite)} EOR.</div>
-        )}
+        <div className="mt-4 text-xs text-slate-400">Capacité de référence de la tournée : {Math.round(tournee.capacite)} EOR.</div>
       </div>
     </div>
   );

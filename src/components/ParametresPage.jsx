@@ -78,8 +78,6 @@ export default function ParametresPage({
   onResetCapacites,
   cleRenfort,
   onCleRenfortChange,
-  volumeRedistribuable,
-  onVolumeRedistribuableChange,
   cleSecable,
   onCleSecableChange,
   secableVoisinage,
@@ -157,7 +155,7 @@ export default function ParametresPage({
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-1 flex items-center gap-1.5">
           <h2 className="text-base font-semibold text-slate-900">Clé de répartition — Renfort</h2>
-          <InfoTip text="Quand la case « Renfort actif » est décochée sur un site, son volume de soutien est réparti sur toutes les autres tournées du site selon cette clé." />
+          <InfoTip text="Le renfort a sa propre capacité et charge, comme une tournée normale (éditable dans la Matrice RH ci-dessus). Quand la case « Actif » est décochée sur le site, sa charge est répartie sur toutes les autres tournées selon cette clé." />
         </div>
         <div className="space-y-4">
           {SITES.map((site) => {
@@ -167,19 +165,7 @@ export default function ParametresPage({
             const otherIds = entries.filter((e) => e.type !== 'renfort').map((e) => e.id);
             return (
               <div key={site.id} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
-                <div className="mb-2 flex items-center justify-between text-sm font-medium text-slate-700">
-                  {site.name}
-                  <label className="flex items-center gap-1.5 text-xs font-normal text-slate-500">
-                    Volume de soutien (EOR)
-                    <input
-                      type="number"
-                      min="0"
-                      value={volumeRedistribuable[renfortEntry.id] ?? renfortEntry.volumeRedistribuable}
-                      onChange={(e) => onVolumeRedistribuableChange(renfortEntry.id, Math.max(0, Number(e.target.value)))}
-                      className="w-20 rounded border border-slate-200 px-1.5 py-0.5 text-right"
-                    />
-                  </label>
-                </div>
+                <div className="mb-2 text-sm font-medium text-slate-700">{site.name}</div>
                 <CleEditor ids={otherIds} cle={cleRenfort[site.id]} onChange={(v) => onCleRenfortChange(site.id, v)} />
               </div>
             );

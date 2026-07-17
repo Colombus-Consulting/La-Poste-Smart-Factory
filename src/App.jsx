@@ -19,7 +19,6 @@ import {
   defaultCapacites,
   defaultRenfortActive,
   defaultCleRenfort,
-  defaultVolumeRedistribuable,
   defaultSecableActive,
   defaultSecableVoisinage,
   defaultCleSecable,
@@ -74,7 +73,6 @@ export default function App() {
   const [capacites, setCapacites] = useState(defaultCapacites());
   const [renfortActive, setRenfortActive] = useState(defaultRenfortActive());
   const [cleRenfort, setCleRenfort] = useState(defaultCleRenfort());
-  const [volumeRedistribuable, setVolumeRedistribuable] = useState(defaultVolumeRedistribuable());
   const [secableActive, setSecableActive] = useState(defaultSecableActive());
   const [secableVoisinage, setSecableVoisinage] = useState(defaultSecableVoisinage());
   const [cleSecable, setCleSecable] = useState(defaultCleSecable());
@@ -97,13 +95,12 @@ export default function App() {
       capacites,
       renfortActive,
       cleRenfort,
-      volumeRedistribuable,
       secableActive,
       secableVoisinage,
       cleSecable,
       secableManual,
     }),
-    [capacites, renfortActive, cleRenfort, volumeRedistribuable, secableActive, secableVoisinage, cleSecable, secableManual]
+    [capacites, renfortActive, cleRenfort, secableActive, secableVoisinage, cleSecable, secableManual]
   );
 
   // Toutes les tournées/agents affichés dans l'app découlent de cet ajustement : capacité live
@@ -127,7 +124,7 @@ export default function App() {
   const selectedTournee = useMemo(() => {
     if (!selectedTourneeId) return null;
     for (const site of allSites) {
-      const t = site.tournees.find((tt) => tt.id === selectedTourneeId) || (site.renfort?.id === selectedTourneeId ? site.renfort : null);
+      const t = site.tournees.find((tt) => tt.id === selectedTourneeId);
       if (t) return { tournee: t, site };
     }
     return null;
@@ -284,15 +281,12 @@ export default function App() {
               onResetCapacites={() => setCapacites(defaultCapacites())}
               cleRenfort={cleRenfort}
               onCleRenfortChange={(siteId, value) => setCleRenfort((prev) => ({ ...prev, [siteId]: value }))}
-              volumeRedistribuable={volumeRedistribuable}
-              onVolumeRedistribuableChange={(id, value) => setVolumeRedistribuable((prev) => ({ ...prev, [id]: value }))}
               cleSecable={cleSecable}
               onCleSecableChange={(id, value) => setCleSecable((prev) => ({ ...prev, [id]: value }))}
               secableVoisinage={secableVoisinage}
               onSecableVoisinageChange={(id, value) => setSecableVoisinage((prev) => ({ ...prev, [id]: value }))}
               onResetParametresAvances={() => {
                 setCleRenfort(defaultCleRenfort());
-                setVolumeRedistribuable(defaultVolumeRedistribuable());
                 setCleSecable(defaultCleSecable());
                 setSecableVoisinage(defaultSecableVoisinage());
               }}
