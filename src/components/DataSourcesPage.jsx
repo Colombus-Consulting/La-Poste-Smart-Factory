@@ -18,10 +18,10 @@ const SOURCES = [
   },
   {
     site: 'Montfort',
-    statut: 'ok',
+    statut: 'incomplete',
     maj: '08/07/2026',
     remarque:
-      "Seul site réel du PoC : charge et capacité par agent issues de l'extraction RH consolidée (fichier « Données RH consolidées »), onglet MFData T, 53 semaines 2025.",
+      "Seul site réel du PoC : charge et capacité par agent issues de l'extraction RH consolidée (fichier « Données RH consolidées »), onglet MFData T, 53 semaines 2025. Exception : l'agent de la tournée T14 n'a aucune donnée sur la période (congé probable) — profil estimé à partir de ses voisines T13/T15 en remplacement.",
   },
 ];
 

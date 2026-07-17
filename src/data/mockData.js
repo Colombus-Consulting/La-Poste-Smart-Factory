@@ -36,7 +36,7 @@ export const SITES = [
 // elles sont éditables depuis l'onglet Paramètres.
 export const SITES_CONFIG = {
   Montfort: [
-    { id: 'T1', type: 'normale', capacite: 203.1, charge: { moyenne: 209.3, ecartType: 54.1, min: 100.1, max: 306.3 } },
+    { id: 'T1', type: 'renfort', capacite: 0, charge: null, volumeRedistribuable: 209 },
     { id: 'T2', type: 'normale', capacite: 585.0, charge: { moyenne: 544.2, ecartType: 236.6, min: 171.8, max: 1199.3 } },
     { id: 'T3', type: 'normale', capacite: 770.4, charge: { moyenne: 796.8, ecartType: 355.1, min: 245.2, max: 1794.2 } },
     { id: 'T4', type: 'normale', capacite: 962.4, charge: { moyenne: 995.0, ecartType: 474.3, min: 262.9, max: 2340.9 } },
@@ -49,14 +49,16 @@ export const SITES_CONFIG = {
     { id: 'T11', type: 'normale', capacite: 778.6, charge: { moyenne: 754.5, ecartType: 324.9, min: 244.8, max: 1655.8 } },
     { id: 'T12', type: 'normale', capacite: 696.8, charge: { moyenne: 660.4, ecartType: 294.5, min: 198.6, max: 1481.4 } },
     { id: 'T13', type: 'normale', capacite: 806.7, charge: { moyenne: 805.2, ecartType: 380.0, min: 216.9, max: 1879.0 } },
-    { id: 'T14', type: 'renfort', capacite: 0, charge: null, volumeRedistribuable: 800 },
+    // T14 : agent normal, sans donnée réelle sur la période de référence (congé probable) —
+    // profil estimé à partir de la moyenne de ses voisines T13/T15 (voir Sources de données).
+    { id: 'T14', type: 'normale', capacite: 795.0, charge: { moyenne: 798.9, ecartType: 364.3, min: 233.5, max: 1823.2 } },
     { id: 'T15', type: 'normale', capacite: 783.3, charge: { moyenne: 792.6, ecartType: 348.5, min: 250.1, max: 1767.3 } },
     { id: 'T16', type: 'normale', capacite: 825.3, charge: { moyenne: 830.1, ecartType: 377.7, min: 243.0, max: 1892.3 } },
     { id: 'T17', type: 'normale', capacite: 871.4, charge: { moyenne: 836.3, ecartType: 363.6, min: 266.0, max: 1846.2 } },
     { id: 'T18', type: 'normale', capacite: 726.7, charge: { moyenne: 682.8, ecartType: 307.8, min: 200.3, max: 1541.7 } },
   ],
   Guichen: [
-    { id: 'GCH-01', type: 'normale', capacite: 268.3, charge: { moyenne: 190.6, ecartType: 85.8, min: 57.2, max: 438.4 } },
+    { id: 'GCH-01', type: 'renfort', capacite: 0, charge: null, volumeRedistribuable: 191 },
     { id: 'GCH-02', type: 'normale', capacite: 831.3, charge: { moyenne: 572.6, ecartType: 257.7, min: 171.8, max: 1317.0 } },
     { id: 'GCH-03', type: 'normale', capacite: 994.9, charge: { moyenne: 798.2, ecartType: 359.2, min: 239.5, max: 1835.9 } },
     { id: 'GCH-04', type: 'normale', capacite: 1179.7, charge: { moyenne: 911.4, ecartType: 410.1, min: 273.4, max: 2096.2 } },
@@ -69,14 +71,16 @@ export const SITES_CONFIG = {
     { id: 'GCH-11', type: 'normale', capacite: 992.7, charge: { moyenne: 689.2, ecartType: 310.1, min: 206.8, max: 1585.2 } },
     { id: 'GCH-12', type: 'normale', capacite: 893.2, charge: { moyenne: 615.5, ecartType: 277.0, min: 184.6, max: 1415.6 } },
     { id: 'GCH-13', type: 'normale', capacite: 967.1, charge: { moyenne: 831.6, ecartType: 374.2, min: 249.5, max: 1912.7 } },
-    { id: 'GCH-14', type: 'renfort', capacite: 0, charge: null, volumeRedistribuable: 800 },
+    // GCH-14 : agent normal, profil estimé à partir de la moyenne de ses voisines GCH-13/GCH-15
+    // (même logique que Montfort T14 — pas de série réelle disponible ici, fictif calibré).
+    { id: 'GCH-14', type: 'normale', capacite: 1011.1, charge: { moyenne: 812.9, ecartType: 365.8, min: 243.9, max: 1869.7 } },
     { id: 'GCH-15', type: 'normale', capacite: 1055.0, charge: { moyenne: 794.2, ecartType: 357.4, min: 238.3, max: 1826.7 } },
     { id: 'GCH-16', type: 'normale', capacite: 1155.0, charge: { moyenne: 788.2, ecartType: 354.7, min: 236.5, max: 1812.9 } },
     { id: 'GCH-17', type: 'normale', capacite: 1105.5, charge: { moyenne: 798.7, ecartType: 359.4, min: 239.6, max: 1837.0 } },
     { id: 'GCH-18', type: 'normale', capacite: 926.7, charge: { moyenne: 684.7, ecartType: 308.1, min: 205.4, max: 1574.8 } },
   ],
   Messac: [
-    { id: 'MSC-01', type: 'normale', capacite: 192.4, charge: { moyenne: 219.7, ecartType: 98.9, min: 65.9, max: 505.3 } },
+    { id: 'MSC-01', type: 'renfort', capacite: 0, charge: null, volumeRedistribuable: 220 },
     { id: 'MSC-02', type: 'normale', capacite: 517.0, charge: { moyenne: 521.6, ecartType: 234.7, min: 156.5, max: 1199.7 } },
     { id: 'MSC-03', type: 'normale', capacite: 717.9, charge: { moyenne: 889.0, ecartType: 400.0, min: 266.7, max: 2044.7 } },
     { id: 'MSC-04', type: 'normale', capacite: 853.6, charge: { moyenne: 1086.1, ecartType: 488.7, min: 325.8, max: 2498.0 } },
@@ -89,7 +93,8 @@ export const SITES_CONFIG = {
     { id: 'MSC-11', type: 'normale', capacite: 729.9, charge: { moyenne: 698.3, ecartType: 314.2, min: 209.5, max: 1606.1 } },
     { id: 'MSC-12', type: 'normale', capacite: 595.6, charge: { moyenne: 640.5, ecartType: 288.2, min: 192.2, max: 1473.1 } },
     { id: 'MSC-13', type: 'normale', capacite: 721.9, charge: { moyenne: 880.7, ecartType: 396.3, min: 264.2, max: 2025.6 } },
-    { id: 'MSC-14', type: 'renfort', capacite: 0, charge: null, volumeRedistribuable: 800 },
+    // MSC-14 : agent normal, profil estimé à partir de la moyenne de ses voisines MSC-13/MSC-15.
+    { id: 'MSC-14', type: 'normale', capacite: 697.3, charge: { moyenne: 807.9, ecartType: 363.6, min: 242.4, max: 1858.1 } },
     { id: 'MSC-15', type: 'normale', capacite: 672.7, charge: { moyenne: 735.0, ecartType: 330.8, min: 220.5, max: 1690.5 } },
     { id: 'MSC-16', type: 'normale', capacite: 801.9, charge: { moyenne: 909.2, ecartType: 409.1, min: 272.8, max: 2091.2 } },
     { id: 'MSC-17', type: 'normale', capacite: 826.7, charge: { moyenne: 774.3, ecartType: 348.4, min: 232.3, max: 1780.9 } },
