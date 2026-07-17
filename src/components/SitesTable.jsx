@@ -22,6 +22,14 @@ function TypeBadge({ type }) {
       </span>
     );
   }
+  if (type === 'renfort') {
+    return (
+      <span className="ml-1.5 inline-flex items-center gap-1 rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+        <LifeBuoy size={10} />
+        Renfort
+      </span>
+    );
+  }
   return <span className="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-normal text-slate-400">Normale</span>;
 }
 
@@ -112,42 +120,69 @@ export default function SitesTable({
               </button>
 
               {!isCollapsed && (
-                <>
-                  {site.renfort && (
-                    <div
-                      onClick={() => onSelectTournee(site.renfort.id)}
-                      className="flex cursor-pointer items-center gap-3 border-t border-slate-50 bg-blue-50/40 px-5 py-2.5 text-xs hover:bg-blue-50"
-                    >
-                      <LifeBuoy size={14} className="shrink-0 text-blue-600" />
-                      <label className="flex items-center gap-1.5 font-medium text-slate-700" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={renfortActif}
-                          onChange={(e) => onToggleRenfort(site.id, e.target.checked)}
-                        />
-                        Renfort actif
-                        <InfoTip text="Un renfort est un agent flottant, sans tournée fixe : il représente une capacité de soutien mobilisable. Décochez pour simuler sa suppression : sa charge est alors redistribuée sur toutes les autres tournées du site." />
-                      </label>
-                      <span className="text-slate-500">
-                        {renfortActif
-                          ? `Volume de soutien disponible : ${Math.round(computeEor(site.renfort.objects.reel, coefficients)).toLocaleString('fr-FR')} EOR`
-                          : `Désactivé — ${Math.round(computeEor(site.renfort.objectsAvantRedistribution || {}, coefficients)).toLocaleString('fr-FR')} EOR redistribués sur le site`}
-                      </span>
-                    </div>
-                  )}
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
-                        <th className="px-5 py-1.5 font-medium">Tournée</th>
-                        <th className="px-5 py-1.5 font-medium">{unit === 'eor' ? 'Charge (EOR)' : 'Charge (objets)'}</th>
-                        <th className="px-5 py-1.5 font-medium">Capacité (EOR)</th>
-                        <th className="px-5 py-1.5 font-medium">Taux d'utilisation</th>
-                        <th className="px-5 py-1.5 font-medium">Statut</th>
-                        <th className="px-5 py-1.5 font-medium text-right">Écart</th>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
+                      <th className="px-5 py-1.5 font-medium">Tournée</th>
+                      <th className="px-5 py-1.5 font-medium">{unit === 'eor' ? 'Charge (EOR)' : 'Charge (objets)'}</th>
+                      <th className="px-5 py-1.5 font-medium">Capacité (EOR)</th>
+                      <th className="px-5 py-1.5 font-medium">Taux d'utilisation</th>
+                      <th className="px-5 py-1.5 font-medium">Statut</th>
+                      <th className="px-5 py-1.5 font-medium text-right">Écart</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {site.renfort && (
+                      <tr
+                        onClick={() => onSelectTournee(site.renfort.id)}
+                        className="cursor-pointer border-t border-slate-50 bg-blue-50/40 hover:bg-blue-50"
+                      >
+                        <td className="px-5 py-2 font-medium text-slate-700">
+                          {site.renfort.name}
+                          <TypeBadge type="renfort" />
+                          <label
+                            className="ml-2 inline-flex items-center gap-1 text-[10px] font-normal text-blue-700"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={renfortActif}
+                              onChange={(e) => onToggleRenfort(site.id, e.target.checked)}
+                            />
+                            Actif
+                          </label>
+                          <InfoTip text="Un renfort est un agent flottant, sans tournée fixe : il représente une capacité de soutien mobilisable, pas comptée dans les totaux du site. Décochez pour simuler sa suppression : sa charge est alors redistribuée sur toutes les autres tournées du site." />
+                        </td>
+                        <td className="px-5 py-2 text-slate-600">
+                          {renfortActif ? (
+                            Math.round(computeEor(site.renfort.objects.reel, coefficients)).toLocaleString('fr-FR')
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-2 text-slate-400">sans capacité fixe</td>
+                        <td className="px-5 py-2">
+                          {renfortActif ? (
+                            <span className="text-xs text-slate-400">agent flottant</span>
+                          ) : (
+                            <span className="text-xs text-slate-400">redistribué</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-2">
+                          {renfortActif ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
+                              Disponible
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700">
+                              Redistribué
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-2 text-right text-slate-400">—</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {metrics.map(({ t, m }) => {
+                    )}
+                    {metrics.map(({ t, m }) => {
                         const ecart = Math.round(m.chargeEor - t.capacite);
                         const incrementEor = t.incrementObjects ? Math.round(computeEor(t.incrementObjects, coefficients)) : 0;
                         const isSecable = t.type === 'secable';
@@ -244,7 +279,6 @@ export default function SitesTable({
                       })}
                     </tbody>
                   </table>
-                </>
               )}
             </div>
           );
