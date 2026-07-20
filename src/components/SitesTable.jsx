@@ -128,6 +128,10 @@ export default function SitesTable({
                       <th className="px-5 py-1.5 font-medium">Taux d'utilisation</th>
                       <th className="px-5 py-1.5 font-medium">Statut</th>
                       <th className="px-5 py-1.5 font-medium text-right">Écart</th>
+                      <th className="px-5 py-1.5 font-medium text-right">
+                        Poids
+                        <InfoTip text="Part de cette tournée dans la charge totale (EOR) du site, recalculée en direct." />
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -140,6 +144,7 @@ export default function SitesTable({
                         const activeMap = isRenfort ? renfortActive : secableActive;
                         const specialOn = isSpecial ? activeMap[t.id] !== false : true;
                         const specialColor = isRenfort ? 'text-blue-700' : 'text-purple-700';
+                        const poids = totalCharge > 0 ? (m.chargeEor / totalCharge) * 100 : 0;
 
                         return (
                           <React.Fragment key={t.id}>
@@ -207,10 +212,11 @@ export default function SitesTable({
                               >
                                 {t.released ? '—' : `${ecart > 0 ? '+' : ''}${ecart.toLocaleString('fr-FR')}`}
                               </td>
+                              <td className="px-5 py-2 text-right text-slate-500">{poids.toFixed(1).replace('.', ',')}%</td>
                             </tr>
                             {isSecable && !specialOn && (
                               <tr>
-                                <td colSpan={6} className="px-5 pb-2">
+                                <td colSpan={7} className="px-5 pb-2">
                                   <button
                                     onClick={() => setManualOpen((m2) => ({ ...m2, [t.id]: !m2[t.id] }))}
                                     className="text-[11px] font-medium text-purple-600 hover:underline"

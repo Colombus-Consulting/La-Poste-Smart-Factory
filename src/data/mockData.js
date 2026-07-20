@@ -79,26 +79,26 @@ export const SITES_CONFIG = {
     { id: 'GCH-17', type: 'normale', capacite: 1105.5, charge: { moyenne: 798.7, ecartType: 359.4, min: 239.6, max: 1837.0 } },
     { id: 'GCH-18', type: 'normale', capacite: 926.7, charge: { moyenne: 684.7, ecartType: 308.1, min: 205.4, max: 1574.8 } },
   ],
+  // Messac : RÉEL, transmis par la PIC — répartition des volumes PF, 5 jours (16-22 mars 2026),
+  // 9 tournées (PDC1). Moyenne/écart-type/min/max recalculés sur ces 5 valeurs journalières ;
+  // capacité = moyenne (pas de valeur de capacité distincte fournie). Pas de renfort dans cet
+  // échantillon ; TM0305 désignée sécable (voisinage = les 2 tournées avant/après dans la liste).
   Messac: [
-    { id: 'MSC-01', type: 'renfort', capacite: 192.4, charge: { moyenne: 219.7, ecartType: 98.9, min: 65.9, max: 505.3 } },
-    { id: 'MSC-02', type: 'normale', capacite: 517.0, charge: { moyenne: 521.6, ecartType: 234.7, min: 156.5, max: 1199.7 } },
-    { id: 'MSC-03', type: 'normale', capacite: 717.9, charge: { moyenne: 889.0, ecartType: 400.0, min: 266.7, max: 2044.7 } },
-    { id: 'MSC-04', type: 'normale', capacite: 853.6, charge: { moyenne: 1086.1, ecartType: 488.7, min: 325.8, max: 2498.0 } },
-    { id: 'MSC-05', type: 'normale', capacite: 624.0, charge: { moyenne: 787.4, ecartType: 354.3, min: 236.2, max: 1811.0 } },
-    { id: 'MSC-06', type: 'normale', capacite: 683.1, charge: { moyenne: 805.1, ecartType: 362.3, min: 241.5, max: 1851.7 } },
-    { id: 'MSC-07', type: 'normale', capacite: 491.8, charge: { moyenne: 852.9, ecartType: 383.8, min: 255.9, max: 1961.7 } },
-    { id: 'MSC-08', type: 'secable', capacite: 578.5, charge: { moyenne: 1059.8, ecartType: 476.9, min: 317.9, max: 2437.5 }, voisinage: ['MSC-06', 'MSC-07', 'MSC-09', 'MSC-10'] },
-    { id: 'MSC-09', type: 'normale', capacite: 770.6, charge: { moyenne: 766.7, ecartType: 345.0, min: 230.0, max: 1763.4 } },
-    { id: 'MSC-10', type: 'normale', capacite: 790.8, charge: { moyenne: 873.9, ecartType: 393.3, min: 262.2, max: 2010.0 } },
-    { id: 'MSC-11', type: 'normale', capacite: 729.9, charge: { moyenne: 698.3, ecartType: 314.2, min: 209.5, max: 1606.1 } },
-    { id: 'MSC-12', type: 'normale', capacite: 595.6, charge: { moyenne: 640.5, ecartType: 288.2, min: 192.2, max: 1473.1 } },
-    { id: 'MSC-13', type: 'normale', capacite: 721.9, charge: { moyenne: 880.7, ecartType: 396.3, min: 264.2, max: 2025.6 } },
-    // MSC-14 : agent normal, profil estimé à partir de la moyenne de ses voisines MSC-13/MSC-15.
-    { id: 'MSC-14', type: 'normale', capacite: 697.3, charge: { moyenne: 807.9, ecartType: 363.6, min: 242.4, max: 1858.1 } },
-    { id: 'MSC-15', type: 'normale', capacite: 672.7, charge: { moyenne: 735.0, ecartType: 330.8, min: 220.5, max: 1690.5 } },
-    { id: 'MSC-16', type: 'normale', capacite: 801.9, charge: { moyenne: 909.2, ecartType: 409.1, min: 272.8, max: 2091.2 } },
-    { id: 'MSC-17', type: 'normale', capacite: 826.7, charge: { moyenne: 774.3, ecartType: 348.4, min: 232.3, max: 1780.9 } },
-    { id: 'MSC-18', type: 'normale', capacite: 622.7, charge: { moyenne: 651.4, ecartType: 293.1, min: 195.4, max: 1498.2 } },
+    { id: 'TM0301', type: 'normale', capacite: 410.2, charge: { moyenne: 410.2, ecartType: 88.9, min: 296, max: 492 } },
+    { id: 'TM0302', type: 'normale', capacite: 231.2, charge: { moyenne: 231.2, ecartType: 89.2, min: 153, max: 334 } },
+    { id: 'TM0303', type: 'normale', capacite: 407.6, charge: { moyenne: 407.6, ecartType: 105.0, min: 259, max: 507 } },
+    { id: 'TM0304', type: 'normale', capacite: 358.6, charge: { moyenne: 358.6, ecartType: 73.6, min: 270, max: 465 } },
+    {
+      id: 'TM0305',
+      type: 'secable',
+      capacite: 368.2,
+      charge: { moyenne: 368.2, ecartType: 90.3, min: 301, max: 518 },
+      voisinage: ['TM0303', 'TM0304', 'TM0308', 'TM0312'],
+    },
+    { id: 'TM0308', type: 'normale', capacite: 287.6, charge: { moyenne: 287.6, ecartType: 104.6, min: 169, max: 416 } },
+    { id: 'TM0312', type: 'normale', capacite: 418.8, charge: { moyenne: 418.8, ecartType: 127.5, min: 305, max: 627 } },
+    { id: 'TM0313', type: 'normale', capacite: 441.8, charge: { moyenne: 441.8, ecartType: 119.5, min: 331, max: 639 } },
+    { id: 'TM0316', type: 'normale', capacite: 485.2, charge: { moyenne: 485.2, ecartType: 136.0, min: 244, max: 571 } },
   ],
 };
 

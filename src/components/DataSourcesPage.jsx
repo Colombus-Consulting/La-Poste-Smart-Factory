@@ -13,15 +13,16 @@ const SOURCES = [
   {
     site: 'Messac',
     statut: 'incomplete',
-    maj: 'Juillet 2026',
-    remarque: 'Fictif, calibré sur le profil Montfort (pas de données réelles à ce stade). À remplacer par un vrai flux quand disponible.',
+    maj: '22/03/2026',
+    remarque:
+      "Réel, transmis par la PIC (répartition des volumes PF, PDC1, 9 tournées). Échantillon restreint à 5 jours (16-22 mars 2026) : moyenne/écart-type/min/max recalculés sur ces 5 valeurs, donc moins robuste statistiquement que Montfort (53 semaines). Aucun agent renfort identifié dans cet échantillon.",
   },
   {
     site: 'Montfort',
     statut: 'incomplete',
     maj: '08/07/2026',
     remarque:
-      "Seul site réel du PoC : charge et capacité par agent issues de l'extraction RH consolidée (fichier « Données RH consolidées »), onglet MFData T, 53 semaines 2025. Exception : l'agent de la tournée T14 n'a aucune donnée sur la période (congé probable) — profil estimé à partir de ses voisines T13/T15 en remplacement.",
+      "Réel : charge et capacité par agent issues de l'extraction RH consolidée (fichier « Données RH consolidées »), onglet MFData T, 53 semaines 2025. Exception : l'agent de la tournée T14 n'a aucune donnée sur la période (congé probable) — profil estimé à partir de ses voisines T13/T15 en remplacement.",
   },
 ];
 

@@ -7,13 +7,15 @@ export default function TourneeListView({ sites, coefficients, unit, onSelectTou
   const rows = useMemo(() => {
     const all = [];
     for (const site of sites) {
+      const siteTotal = site.tournees.reduce((s, t) => s + computeEor(t.objects.reel, coefficients), 0);
       for (const t of site.tournees) {
         const objects = t.objects.reel;
         const chargeEor = computeEor(objects, coefficients);
         const chargeObjets = Object.values(objects).reduce((sum, count) => sum + count, 0);
         const ratio = chargeEor / t.capacite;
         const status = ratio > 1 ? 'surcharge' : ratio < 0.85 ? 'sous-charge' : 'optimal';
-        all.push({ t, siteName: site.name, chargeEor, chargeObjets, ratio, status });
+        const poids = siteTotal > 0 ? (chargeEor / siteTotal) * 100 : 0;
+        all.push({ t, siteName: site.name, chargeEor, chargeObjets, ratio, status, poids });
       }
     }
     return all.sort((a, b) => b.ratio - a.ratio);
@@ -35,10 +37,14 @@ export default function TourneeListView({ sites, coefficients, unit, onSelectTou
               <th className="px-5 py-2 font-medium">Capacité (EOR)</th>
               <th className="px-5 py-2 font-medium">Taux d'utilisation</th>
               <th className="px-5 py-2 font-medium">Statut</th>
+              <th className="px-5 py-2 font-medium text-right">
+                Poids
+                <InfoTip text="Part de cette tournée dans la charge totale (EOR) de son site, recalculée en direct." />
+              </th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ t, siteName, chargeEor, chargeObjets, ratio, status }) => (
+            {rows.map(({ t, siteName, chargeEor, chargeObjets, ratio, status, poids }) => (
               <tr key={t.id} onClick={() => onSelectTournee(t.id)} className="cursor-pointer border-t border-slate-50 hover:bg-slate-50">
                 <td className="px-5 py-2 font-medium text-slate-700">
                   {t.name}
@@ -78,6 +84,7 @@ export default function TourneeListView({ sites, coefficients, unit, onSelectTou
                     <StatusPastille status={status} />
                   )}
                 </td>
+                <td className="px-5 py-2 text-right text-slate-500">{poids.toFixed(1).replace('.', ',')}%</td>
               </tr>
             ))}
           </tbody>
